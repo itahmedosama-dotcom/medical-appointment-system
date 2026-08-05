@@ -594,6 +594,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .status-chip-btn.current.done{ background: var(--success-tint); color: var(--success); border-color: transparent; }
 .status-chip-btn.current.cancelled{ background: var(--danger-tint); color: var(--danger); border-color: transparent; }
 
+/* ============================================================
+   كود التحقق (Captcha) في صفحة الدخول
+   ============================================================ */
+.captcha-box{
+  border: 1.5px dashed var(--line-strong);
+  background: var(--teal-tint);
+  border-radius: var(--radius);
+  padding: .7rem 1rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: .3rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.captcha-box span:nth-child(odd){ color: var(--teal-dark); }
+.captcha-box span:nth-child(even){ color: #2C6FA8; }
+
 /* Sidebar mobile */
 @media (max-width: 991.98px){
   .app-sidebar{

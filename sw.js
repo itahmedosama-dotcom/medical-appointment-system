@@ -12,6 +12,7 @@ const SHELL_FILES = [
   './js/auth.js',
   './js/i18n.js',
   './js/export.js',
+  './js/lanes.js',
   './js/app.js',
   './manifest.json',
   './assets/icons/icon-192.png',

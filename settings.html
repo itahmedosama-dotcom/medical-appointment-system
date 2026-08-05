@@ -70,6 +70,7 @@
             <div class="card-body">
               <form id="settingsForm" onsubmit="return false;">
                 <div class="mb-3"><label class="form-label" data-i18n="centerName">اسم المركز</label><input type="text" id="centerName" class="form-control"></div>
+                <div class="mb-3"><label class="form-label" data-i18n="countryCodeLabel">كود الدولة (للواتساب)</label><input type="text" id="countryCode" class="form-control text-mono" placeholder="20" style="max-width:120px;"></div>
                 <div class="row g-3">
                   <div class="col-6"><label class="form-label" data-i18n="startTime">بداية العمل</label><input type="time" id="workStart" class="form-control"></div>
                   <div class="col-6"><label class="form-label" data-i18n="endTime">نهاية العمل</label><input type="time" id="workEnd" class="form-control"></div>
@@ -149,6 +150,7 @@
     try{
       const s = await Api.getSettings();
       document.getElementById('centerName').value = s.centerName || '';
+      document.getElementById('countryCode').value = s.countryCode || '20';
       document.getElementById('workStart').value = s.workStart || '09:00';
       document.getElementById('workEnd').value = s.workEnd || '20:00';
       document.getElementById('whatsappTemplate').value = s.whatsappTemplate || '';
@@ -163,6 +165,7 @@
     try{
       await Api.updateSettings({
         centerName: document.getElementById('centerName').value.trim(),
+        countryCode: document.getElementById('countryCode').value.trim(),
         workStart: document.getElementById('workStart').value,
         workEnd: document.getElementById('workEnd').value,
         whatsappTemplate: document.getElementById('whatsappTemplate').value

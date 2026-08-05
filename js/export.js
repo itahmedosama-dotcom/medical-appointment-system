@@ -28,6 +28,17 @@ function buildAppointmentMessage(data){
     .replace(/{time}/g, data.time || '');
 }
 
+function normalizePhone(phone){
+  let digits = (phone || '').replace(/[^\d]/g, '');
+  if(!digits) return '';
+  // لو الرقم مكتوب بصيغة محلية (يبدأ بصفر)، استبدل الصفر بكود الدولة من الإعدادات
+  if(digits.startsWith('0')){
+    const cc = (__settingsCache && __settingsCache.countryCode) || '20';
+    digits = cc + digits.slice(1);
+  }
+  return digits;
+}
+
 /** data = { patient, service, date, time, provider, phone, center } */
 async function openShareModal(data){
   await ensureSettingsCache();
@@ -43,13 +54,18 @@ async function openShareModal(data){
   const waBtn = document.getElementById('shareWhatsappBtn');
   if(waBtn){
     waBtn.onclick = () => {
-      const text = encodeURIComponent(buildAppointmentMessage(data));
-      const phone = (data.phone || '').replace(/[^\d]/g, '');
+      const phone = normalizePhone(data.phone);
       if(!phone){
         alertToast(typeof t === 'function' ? t('noPhoneWarning') : 'لا يوجد رقم هاتف مسجل لهذا المريض', 'warning');
         return;
       }
-      window.open(`https://wa.me/${phone}?text=${text}`, '_blank', 'noopener');
+      const text = encodeURIComponent(buildAppointmentMessage(data));
+      const url = `https://wa.me/${phone}?text=${text}`;
+      const win = window.open(url, '_blank', 'noopener');
+      // بعض المتصفحات تمنع النوافذ المنبثقة — لو اتمنعت، اعرض رابط مباشر بدل ما نفشل بصمت
+      if(!win || win.closed || typeof win.closed === 'undefined'){
+        waBtn.outerHTML = `<a href="${url}" target="_blank" rel="noopener" class="share-option-btn whatsapp" style="text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${typeof t === 'function' ? t('shareWhatsapp') : 'إرسال عبر واتساب ويب'}</a>`;
+      }
     };
   }
   const pngBtn = document.getElementById('sharePngBtn');

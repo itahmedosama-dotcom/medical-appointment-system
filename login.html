@@ -83,6 +83,19 @@
             <i class="fa-regular fa-lock-keyhole input-icon-end"></i>
           </div>
         </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0" data-i18n="captchaLabel">رمز التحقق</label>
+          </div>
+          <div class="d-flex align-items-stretch gap-2 mb-2">
+            <button type="button" class="btn btn-icon btn-soft" id="captchaRefreshBtn" data-i18n-title="captchaRefresh" title="تحديث الرمز"><i class="fa-solid fa-rotate-left"></i></button>
+            <button type="button" class="btn btn-icon btn-soft" id="captchaCopyBtn" data-i18n-title="captchaCopy" title="نسخ الرمز"><i class="fa-regular fa-copy"></i></button>
+            <div class="captcha-box flex-fill" id="captchaDisplay"></div>
+          </div>
+          <input type="text" id="captchaInput" class="form-control text-mono" data-i18n-placeholder="captchaPlaceholder" placeholder="اكتب رمز التحقق" autocomplete="off" required>
+        </div>
+
         <div class="d-flex align-items-center justify-content-between mb-4">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="remember" checked>
@@ -100,15 +113,40 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   if(!Api.isConfigured()) document.getElementById('configWarning').classList.remove('d-none');
   if(localStorage.getItem('mas_user')) window.location.href = 'index.html';
 
-  // زر تبديل اللغة في صفحة الدخول (قبل ما يكون فيه مستخدم مسجل، فقط محليًا)
+  // زر تبديل اللغة في صفحة الدخول
   document.getElementById('langSwitchBtnLogin').textContent = t('langSwitchLabel');
   document.getElementById('langSwitchBtnLogin').addEventListener('click', () => {
     localStorage.setItem('mas_lang', getLang() === 'ar' ? 'en' : 'ar');
     window.location.reload();
+  });
+
+  // ---------- كود التحقق (Captcha) ----------
+  let captchaCode = '';
+  const CAPTCHA_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // بدون أحرف/أرقام ملتبسة (O,0,I,1)
+
+  function generateCaptcha(){
+    captchaCode = Array.from({ length: 5 }, () => CAPTCHA_CHARS[Math.floor(Math.random() * CAPTCHA_CHARS.length)]).join('');
+    document.getElementById('captchaDisplay').innerHTML =
+      captchaCode.split('').map(c => `<span>${c}</span>`).join(' ');
+    document.getElementById('captchaInput').value = '';
+  }
+  generateCaptcha();
+
+  document.getElementById('captchaRefreshBtn').addEventListener('click', generateCaptcha);
+  document.getElementById('captchaCopyBtn').addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(captchaCode);
+    } catch(e){
+      document.getElementById('captchaInput').value = captchaCode;
+    }
+    if(typeof Swal !== 'undefined'){
+      Swal.fire({ toast:true, position:'top-start', icon:'success', title: t('captchaCopied'), showConfirmButton:false, timer:1200 });
+    }
   });
 
   document.getElementById('loginForm').addEventListener('submit', function(e){
@@ -116,6 +154,19 @@
     const btn = document.getElementById('loginBtn');
     const errBox = document.getElementById('loginError');
     errBox.classList.add('d-none');
+
+    const captchaInput = document.getElementById('captchaInput').value.trim();
+    if(!captchaInput){
+      errBox.textContent = t('captchaRequired');
+      errBox.classList.remove('d-none');
+      return;
+    }
+    if(captchaInput.toUpperCase() !== captchaCode.toUpperCase()){
+      errBox.textContent = t('captchaMismatch');
+      errBox.classList.remove('d-none');
+      generateCaptcha();
+      return;
+    }
 
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
@@ -127,13 +178,13 @@
     Api.login(username, password)
       .then(user => {
         localStorage.setItem('mas_user', JSON.stringify(user));
-        // طبّق لغة الحساب المحفوظة فورًا (لو مختلفة عن اللغة المحلية الحالية)
         if(user.language) localStorage.setItem('mas_lang', user.language);
         window.location.href = 'index.html';
       })
       .catch(err => {
         errBox.textContent = err.message;
         errBox.classList.remove('d-none');
+        generateCaptcha();
       })
       .finally(() => {
         btn.disabled = false;
