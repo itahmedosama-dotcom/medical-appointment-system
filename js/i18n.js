@@ -9,7 +9,7 @@
 
 const DICT = {
   // ------- عام / Common -------
-  appName:        { ar:'مركز الشفاء الطبي', en:'Al-Shifa Medical Center' },
+  appName:        { ar:'برنامج حجز عيادات', en:'Clinics Booking Program' },
   save:           { ar:'حفظ', en:'Save' },
   cancel:         { ar:'إلغاء', en:'Cancel' },
   edit:           { ar:'تعديل', en:'Edit' },
@@ -59,7 +59,7 @@ const DICT = {
 
   // ------- الرئيسية / Dashboard -------
   dashTitle:      { ar:'نظرة عامة على اليوم', en:"Today's overview" },
-  dashSubtitle:   { ar:'ملخص الحجوزات والنشاط في مركز الشفاء الطبي.', en:'A summary of bookings and activity at the center.' },
+  dashSubtitle:   { ar:'ملخص الحجوزات والنشاط في برنامج حجز عيادات.', en:'A summary of bookings and activity at the center.' },
   newBooking:     { ar:'حجز جديد', en:'New booking' },
   kpiApptsToday:  { ar:'حجوزات اليوم', en:"Today's bookings" },
   kpiPatientsTotal: { ar:'إجمالي المرضى', en:'Total patients' },

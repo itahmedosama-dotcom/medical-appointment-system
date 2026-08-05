@@ -8,7 +8,8 @@
 const Api = (function(){
 
   function isConfigured(){
-    return Config.API_URL && Config.API_URL.indexOf('PASTE_YOUR') === -1;
+    return Config.API_URL && Config.API_URL.indexOf('PASTE_YOUR') === -1
+        && Config.API_KEY && Config.API_KEY.indexOf('PASTE_YOUR') === -1;
   }
 
   function flatten(obj){
@@ -29,16 +30,16 @@ const Api = (function(){
   function call(action, payload, method){
     method = method || 'GET';
     if(!isConfigured()){
-      return Promise.reject(new Error('لم يتم ضبط رابط الـ API بعد. راجع SETUP_GUIDE.md وضبط js/config.js'));
+      return Promise.reject(new Error('لم يتم ضبط رابط الـ API أو مفتاحه بعد. راجع SETUP_GUIDE.md وضبط js/config.js'));
     }
     if(method === 'GET'){
-      const qs = new URLSearchParams(Object.assign({ action }, flatten(payload))).toString();
+      const qs = new URLSearchParams(Object.assign({ action, apiKey: Config.API_KEY }, flatten(payload))).toString();
       return fetch(`${Config.API_URL}?${qs}`).then(handle);
     }
     return fetch(Config.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, payload: payload || {} })
+      body: JSON.stringify({ action, apiKey: Config.API_KEY, payload: payload || {} })
     }).then(handle);
   }
 
