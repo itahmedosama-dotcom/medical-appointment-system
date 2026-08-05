@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D4A43">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<title>الحجز — مركز الشفاء الطبي</title>
+<script>
+  (function(){
+    var lang = localStorage.getItem('mas_lang') || 'ar';
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+    document.write('<link id="bootstrapCss" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/' + (lang === 'en' ? 'bootstrap.min.css' : 'bootstrap.rtl.min.css') + '" rel="stylesheet">');
+  })();
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="sidebar-backdrop"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-brand"><div class="mark">ش</div><div class="name"><span data-i18n="appName">مركز الشفاء الطبي</span><small data-i18n="sidebarSubtitle">نظام إدارة المواعيد</small></div></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
+      <a href="patients.html"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <div class="nav-section-label" data-i18n="navAppointmentsSection">المواعيد</div>
+      <a href="booking.html" class="active"><i class="fa-solid fa-calendar-plus"></i> <span data-i18n="navBooking">الحجز</span></a>
+      <a href="daily-appointments.html"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navDaily">الحجوزات اليومية</span></a>
+      <div class="nav-section-label" data-i18n="navSystemSection">النظام</div>
+      <a href="reports.html"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+    </nav>
+    <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="topbar-btn d-lg-none" data-toggle="sidebar"><i class="fa-solid fa-bars"></i></button>
+      <div class="search-box"><input type="text" data-i18n-placeholder="search" placeholder="بحث..."><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div id="langSwitcherHost"></div>
+        <button class="topbar-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+        <div class="avatar-chip"><div class="initials">؟؟</div><div class="who"><div class="n">...</div><div class="r">...</div></div></div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <div id="apiWarning" class="alert d-none mb-3" style="background:var(--warning-tint);color:var(--warning);border:none;border-radius:var(--radius);font-size:.85rem;">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i> <span data-i18n="apiNotConfigured">الواجهة غير متصلة بقاعدة البيانات بعد.</span>
+      </div>
+
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" data-i18n="bookingEyebrow">حجز جديد</div>
+          <h1 data-i18n="bookingTitle">الحجز</h1>
+          <p data-i18n="bookingSubtitle">اختر الخدمة أولًا.</p>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-header" data-i18n="bookingDataTitle">بيانات الحجز</div>
+            <div class="card-body">
+              <form id="bookingForm" onsubmit="return false;">
+                <div class="mb-3">
+                  <label class="form-label" data-i18n="patientLabel">العميل</label>
+                  <select class="form-select" id="bookingPatient" required>
+                    <option value="" data-i18n="loading">جارِ التحميل...</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label" data-i18n="serviceLabel">الخدمة</label>
+                  <select class="form-select" id="bookingService" required>
+                    <option value="" data-i18n="loading">جارِ التحميل...</option>
+                  </select>
+                </div>
+
+                <div class="row g-3 mb-1">
+                  <div class="col-6"><label class="form-label" data-i18n="dateLabel">التاريخ</label><input type="date" id="bookingDate" class="form-control" required></div>
+                  <div class="col-6"><label class="form-label" data-i18n="timeLabel">الوقت</label><input type="time" id="bookingTime" class="form-control" required></div>
+                </div>
+
+                <hr class="section-divider">
+                <div class="chip mb-3"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="dynamicFieldsHint">الحقول التالية تظهر حسب الخدمة المختارة</span></div>
+
+                <div id="field-doctor" class="mb-3 d-none">
+                  <label class="form-label"><span class="lane-dot doctor me-1"></span> <span data-i18n="doctorLabel">الطبيب</span></label>
+                  <select class="form-select" id="bookingDoctor"><option value="" data-i18n="chooseOption">اختر...</option></select>
+                </div>
+                <div id="field-nurse" class="mb-3 d-none">
+                  <label class="form-label"><span class="lane-dot nurse me-1"></span> <span data-i18n="nurseLabel">الممرضة</span></label>
+                  <select class="form-select" id="bookingNurse"><option value="" data-i18n="chooseOption">اختر...</option></select>
+                </div>
+                <div id="field-device" class="mb-3 d-none">
+                  <label class="form-label"><span class="lane-dot device me-1"></span> <span data-i18n="deviceLabel">الجهاز</span></label>
+                  <select class="form-select" id="bookingDevice"><option value="" data-i18n="chooseOption">اختر...</option></select>
+                </div>
+
+                <div id="conflictBox" class="alert d-flex align-items-center gap-2 d-none" style="border-radius:var(--radius);font-size:.85rem;"></div>
+
+                <div class="d-flex gap-2">
+                  <button class="btn btn-teal flex-fill py-2" id="confirmBookingBtn" onclick="confirmBooking()"><i class="fa-solid fa-calendar-check me-1"></i> <span data-i18n="confirmBookingBtn">تأكيد الحجز</span></button>
+                  <button class="btn btn-whatsapp" type="button" id="shareBookingBtn" disabled>
+                    <i class="fa-solid fa-share-nodes me-1"></i> <span data-i18n="shareBtn">مشاركة</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card">
+            <div class="card-header" data-i18n="previewTitle">معاينة بطاقة الحجز</div>
+            <div class="card-body">
+              <div class="lane-card doctor" id="previewCard">
+                <div class="lane-head"><i class="fa-solid fa-calendar-check"></i> <span data-i18n="previewLabel">معاينة</span></div>
+                <div class="p-3">
+                  <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="patientLabel">العميل</span><b id="prevPatient">-</b></div>
+                  <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="serviceLabel">الخدمة</span><b id="prevService">-</b></div>
+                  <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="dateLabel">التاريخ</span><b class="text-mono" id="prevDate">-</b></div>
+                  <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="timeLabel">الوقت</span><b class="text-mono" id="prevTime">-</b></div>
+                  <div class="d-flex justify-content-between"><span class="muted" data-i18n="previewProvidersLabel">مقدمو الخدمة</span><span id="prevProviders">-</span></div>
+                </div>
+              </div>
+              <p class="faint mt-3 mb-0" style="font-size:.8rem;">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                <span data-i18n="shareHintBooking">بعد تأكيد الحجز يمكنك الضغط على "مشاركة".</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header"><h5 class="modal-title" data-i18n="shareModalTitle">مشاركة الحجز</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div id="shareCardPrintable" class="printable-card mb-3">
+          <div class="pc-head"><span id="shareCardCenter">مركز الشفاء الطبي</span><small data-i18n="shareCardSubtitle">تأكيد حجز موعد</small></div>
+          <div class="pc-body">
+            <div class="pc-row"><span data-i18n="shareClient">العميل</span><span id="shareCardPatient">-</span></div>
+            <div class="pc-row"><span data-i18n="shareService">الخدمة</span><span id="shareCardService">-</span></div>
+            <div class="pc-row"><span data-i18n="shareDate">التاريخ</span><span id="shareCardDate">-</span></div>
+            <div class="pc-row"><span data-i18n="shareTime">الوقت</span><span id="shareCardTime">-</span></div>
+            <div class="pc-row"><span data-i18n="shareProvider">مقدم الخدمة</span><span id="shareCardProvider">-</span></div>
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="share-option-btn whatsapp" id="shareWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> <span data-i18n="shareWhatsapp">إرسال عبر واتساب ويب</span></button>
+          <button type="button" class="share-option-btn png" id="sharePngBtn"><i class="fa-regular fa-image"></i> <span data-i18n="sharePng">تحميل كصورة (PNG)</span></button>
+          <button type="button" class="share-option-btn pdf" id="sharePdfBtn"><i class="fa-regular fa-file-pdf"></i> <span data-i18n="sharePdf">تحميل كـ PDF</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const user = requireAuth();
+  if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
+
+  let patients = [], services = [], providers = [];
+  let lastCreatedAppointment = null;
+
+  document.getElementById('bookingDate').value = new Date().toISOString().slice(0,10);
+
+  async function loadFormData(){
+    if(!Api.isConfigured()) return;
+    try{
+      [patients, services, providers] = await Promise.all([
+        Api.getPatients(), Api.getServices(), Api.getProviders()
+      ]);
+
+      document.getElementById('bookingPatient').innerHTML =
+        `<option value="">${t('choosePatient')}</option>` +
+        patients.map(p => `<option value="${p.ID}">${p.Name} — ${p.Phone||''}</option>`).join('');
+
+      document.getElementById('bookingService').innerHTML =
+        `<option value="">${t('chooseService')}</option>` +
+        services.map(s => `<option value="${s.ID}">${s.Name} (${s.Duration} ${t('minutesSuffix')})</option>`).join('');
+
+      populateProviderSelects();
+      updatePreview();
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    }
+  }
+
+  function bool(v){ return v === true || String(v).toLowerCase() === 'true'; }
+
+  function populateProviderSelects(){
+    const doctors = providers.filter(p => p.Type === 'doctor' && bool(p.Active));
+    const nurses  = providers.filter(p => p.Type === 'nurse'  && bool(p.Active));
+    const devices = providers.filter(p => p.Type === 'device' && bool(p.Active));
+
+    document.getElementById('bookingDoctor').innerHTML = `<option value="">${t('chooseOption')}</option>` +
+      doctors.map(p => `<option value="${p.ID}">${p.Name} — ${p.Specialty||''} (${p.StartTime}–${p.EndTime})</option>`).join('');
+    document.getElementById('bookingNurse').innerHTML = `<option value="">${t('chooseOption')}</option>` +
+      nurses.map(p => `<option value="${p.ID}">${p.Name} (${p.StartTime}–${p.EndTime})</option>`).join('');
+    document.getElementById('bookingDevice').innerHTML = `<option value="">${t('chooseOption')}</option>` +
+      devices.map(p => `<option value="${p.ID}">${p.Name} (${p.StartTime}–${p.EndTime})</option>`).join('');
+  }
+
+  function currentService(){
+    const id = document.getElementById('bookingService').value;
+    return services.find(s => String(s.ID) === String(id));
+  }
+
+  function applyServiceFields(){
+    const svc = currentService();
+    const rules = svc
+      ? { doctor: bool(svc.NeedsDoctor), nurse: bool(svc.NeedsNurse), device: bool(svc.NeedsDevice) }
+      : { doctor:false, nurse:false, device:false };
+
+    ['doctor','nurse','device'].forEach(key => {
+      document.getElementById(`field-${key}`).classList.toggle('d-none', !rules[key]);
+      if(!rules[key]) document.getElementById(`booking${key[0].toUpperCase()+key.slice(1)}`).value = '';
+    });
+    checkConflictLive();
+    updatePreview();
+  }
+
+  document.getElementById('bookingService').addEventListener('change', applyServiceFields);
+  ['bookingDate','bookingTime','bookingDoctor','bookingNurse','bookingDevice','bookingPatient']
+    .forEach(id => document.getElementById(id).addEventListener('change', () => { checkConflictLive(); updatePreview(); }));
+
+  function updatePreview(){
+    const patient = patients.find(p => String(p.ID) === document.getElementById('bookingPatient').value);
+    const svc = currentService();
+    document.getElementById('prevPatient').textContent = patient ? patient.Name : '-';
+    document.getElementById('prevService').textContent = svc ? svc.Name : '-';
+    document.getElementById('prevDate').textContent = document.getElementById('bookingDate').value || '-';
+    document.getElementById('prevTime').textContent = document.getElementById('bookingTime').value || '-';
+
+    const chosen = [];
+    ['bookingDoctor','bookingNurse','bookingDevice'].forEach((id, i) => {
+      const lane = ['doctor','nurse','device'][i];
+      const val = document.getElementById(id).value;
+      if(val){
+        const p = providers.find(pr => String(pr.ID) === String(val));
+        if(p) chosen.push(`<span class="lane-chip ${lane}"><span class="lane-dot ${lane}"></span> ${p.Name}</span>`);
+      }
+    });
+    document.getElementById('prevProviders').innerHTML = chosen.join(' ') || '-';
+
+    const svcNow = currentService();
+    const laneClass = svcNow && bool(svcNow.NeedsDoctor) ? 'doctor' : (svcNow && bool(svcNow.NeedsNurse) ? 'nurse' : 'device');
+    document.getElementById('previewCard').className = 'lane-card ' + laneClass;
+  }
+
+  let conflictTimer = null;
+  function checkConflictLive(){
+    clearTimeout(conflictTimer);
+    const box = document.getElementById('conflictBox');
+    const svc = currentService();
+    const date = document.getElementById('bookingDate').value;
+    const time = document.getElementById('bookingTime').value;
+    if(!svc || !date || !time){ box.classList.add('d-none'); return; }
+
+    conflictTimer = setTimeout(async () => {
+      try{
+        const payload = {
+          date, time, duration: svc.Duration,
+          doctorId: document.getElementById('bookingDoctor').value,
+          nurseId: document.getElementById('bookingNurse').value,
+          deviceId: document.getElementById('bookingDevice').value
+        };
+        if(!payload.doctorId && !payload.nurseId && !payload.deviceId){ box.classList.add('d-none'); return; }
+        box.classList.remove('d-none');
+        const result = await Api.checkConflict(payload);
+        if(result.hasConflict){
+          box.style.background = 'var(--danger-tint)'; box.style.color = 'var(--danger)'; box.style.border='none';
+          box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${t('conflictYes')}`;
+        } else {
+          box.style.background = 'var(--success-tint)'; box.style.color = 'var(--success)'; box.style.border='none';
+          box.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${t('conflictNo')}`;
+        }
+      } catch(err){
+        box.style.background = 'var(--warning-tint)'; box.style.color = 'var(--warning)'; box.style.border='none';
+        box.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${t('conflictCheckFailed')}: ${err.message}`;
+      }
+    }, 350);
+  }
+
+  async function confirmBooking(){
+    const patientId = document.getElementById('bookingPatient').value;
+    const svc = currentService();
+    const date = document.getElementById('bookingDate').value;
+    const time = document.getElementById('bookingTime').value;
+
+    if(!patientId || !svc || !date || !time){
+      Swal.fire({ icon:'warning', title: t('bookingFillFirst'), confirmButtonColor:'#14685E' });
+      return;
+    }
+
+    const payload = {
+      patientId, serviceId: svc.ID, date, time, duration: svc.Duration,
+      doctorId: document.getElementById('bookingDoctor').value,
+      nurseId: document.getElementById('bookingNurse').value,
+      deviceId: document.getElementById('bookingDevice').value
+    };
+
+    const btn = document.getElementById('confirmBookingBtn');
+    btn.disabled = true;
+    try{
+      const created = await Api.createAppointment(payload);
+      lastCreatedAppointment = created;
+      document.getElementById('shareBookingBtn').disabled = false;
+      Swal.fire({ icon:'success', title: t('bookingSuccess'), confirmButtonColor:'#14685E' });
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('shareBookingBtn').addEventListener('click', () => {
+    if(!lastCreatedAppointment) return;
+    const patient = patients.find(p => String(p.ID) === String(lastCreatedAppointment.PatientID));
+    const svc = services.find(s => String(s.ID) === String(lastCreatedAppointment.ServiceID));
+    const providerId = lastCreatedAppointment.DoctorID || lastCreatedAppointment.NurseID || lastCreatedAppointment.DeviceID;
+    const provider = providers.find(p => String(p.ID) === String(providerId));
+    openShareModal({
+      patient: patient ? patient.Name : '-',
+      service: svc ? svc.Name : '-',
+      date: lastCreatedAppointment.Date,
+      time: lastCreatedAppointment.Time,
+      provider: provider ? provider.Name : '-',
+      phone: patient ? patient.Phone : ''
+    });
+  });
+
+  loadFormData();
+</script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D4A43">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<title>الحجوزات اليومية — مركز الشفاء الطبي</title>
+<script>
+  (function(){
+    var lang = localStorage.getItem('mas_lang') || 'ar';
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+    document.write('<link id="bootstrapCss" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/' + (lang === 'en' ? 'bootstrap.min.css' : 'bootstrap.rtl.min.css') + '" rel="stylesheet">');
+  })();
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="sidebar-backdrop"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-brand"><div class="mark">ش</div><div class="name"><span data-i18n="appName">مركز الشفاء الطبي</span><small data-i18n="sidebarSubtitle">نظام إدارة المواعيد</small></div></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
+      <a href="patients.html"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <div class="nav-section-label" data-i18n="navAppointmentsSection">المواعيد</div>
+      <a href="booking.html"><i class="fa-solid fa-calendar-plus"></i> <span data-i18n="navBooking">الحجز</span></a>
+      <a href="daily-appointments.html" class="active"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navDaily">الحجوزات اليومية</span></a>
+      <div class="nav-section-label" data-i18n="navSystemSection">النظام</div>
+      <a href="reports.html"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+    </nav>
+    <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="topbar-btn d-lg-none" data-toggle="sidebar"><i class="fa-solid fa-bars"></i></button>
+      <div class="search-box"><input type="text" id="searchBox" data-i18n-placeholder="search" placeholder="بحث..."><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div id="langSwitcherHost"></div>
+        <button class="topbar-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+        <div class="avatar-chip"><div class="initials">؟؟</div><div class="who"><div class="n">...</div><div class="r">...</div></div></div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <div id="apiWarning" class="alert d-none mb-3" style="background:var(--warning-tint);color:var(--warning);border:none;border-radius:var(--radius);font-size:.85rem;">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i> <span data-i18n="apiNotConfigured">الواجهة غير متصلة بقاعدة البيانات بعد.</span>
+      </div>
+
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" id="dateLabel">اليوم</div>
+          <h1 data-i18n="dailyTitle">الحجوزات اليومية</h1>
+          <p data-i18n="dailySubtitle">العرض حسب مقدم الخدمة.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <input type="date" class="form-control" id="dateFilter" style="width:auto;">
+          <a href="booking.html" class="btn btn-teal"><i class="fa-solid fa-plus me-1"></i> <span data-i18n="newBooking">حجز جديد</span></a>
+        </div>
+      </div>
+
+      <div class="row g-3" id="lanesRow">
+        <div class="col-12 text-center faint py-5" data-i18n="loading">جارِ التحميل...</div>
+      </div>
+
+      <p class="faint text-center mt-4 mb-0" style="font-size:.82rem;">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        <span data-i18n="shareHintDaily">أيقونة المشاركة بجانب كل حجز تفتح نافذة لإرساله.</span>
+      </p>
+    </main>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header"><h5 class="modal-title" data-i18n="shareModalTitle">مشاركة الحجز</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div id="shareCardPrintable" class="printable-card mb-3">
+          <div class="pc-head"><span id="shareCardCenter">مركز الشفاء الطبي</span><small data-i18n="shareCardSubtitle">تأكيد حجز موعد</small></div>
+          <div class="pc-body">
+            <div class="pc-row"><span data-i18n="shareClient">العميل</span><span id="shareCardPatient">-</span></div>
+            <div class="pc-row"><span data-i18n="shareService">الخدمة</span><span id="shareCardService">-</span></div>
+            <div class="pc-row"><span data-i18n="shareDate">التاريخ</span><span id="shareCardDate">-</span></div>
+            <div class="pc-row"><span data-i18n="shareTime">الوقت</span><span id="shareCardTime">-</span></div>
+            <div class="pc-row"><span data-i18n="shareProvider">مقدم الخدمة</span><span id="shareCardProvider">-</span></div>
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="share-option-btn whatsapp" id="shareWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> <span data-i18n="shareWhatsapp">إرسال عبر واتساب ويب</span></button>
+          <button type="button" class="share-option-btn png" id="sharePngBtn"><i class="fa-regular fa-image"></i> <span data-i18n="sharePng">تحميل كصورة (PNG)</span></button>
+          <button type="button" class="share-option-btn pdf" id="sharePdfBtn"><i class="fa-regular fa-file-pdf"></i> <span data-i18n="sharePdf">تحميل كـ PDF</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const user = requireAuth();
+  if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
+
+  let patients = [], services = [], providers = [], appointments = [];
+
+  const dateInput = document.getElementById('dateFilter');
+  dateInput.value = new Date().toISOString().slice(0,10);
+  dateInput.addEventListener('change', loadDay);
+
+  function bool(v){ return v === true || String(v).toLowerCase() === 'true'; }
+
+  function updateDateLabel(){
+    const d = new Date(dateInput.value);
+    document.getElementById('dateLabel').textContent = d.toLocaleDateString(getLang()==='en' ? 'en-US' : 'ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  /** أزرار إجراء تفاعلية بدل قائمة منسدلة: كل حالة لها زر واحد بلمسة واحدة */
+  function statusActionsHtml(id, status){
+    const btns = [];
+    if(status !== 'arrived') btns.push(`<button class="status-chip-btn checkin" title="${t('actionCheckIn')}" onclick="updateStatus('${id}','arrived')"><i class="fa-solid fa-user-check"></i></button>`);
+    if(status !== 'done') btns.push(`<button class="status-chip-btn complete" title="${t('actionComplete')}" onclick="updateStatus('${id}','done')"><i class="fa-solid fa-check-double"></i></button>`);
+    if(status === 'cancelled'){
+      btns.push(`<button class="status-chip-btn reopen" title="${t('actionReopen')}" onclick="updateStatus('${id}','booked')"><i class="fa-solid fa-rotate-left"></i></button>`);
+    } else {
+      btns.push(`<button class="status-chip-btn cancel" title="${t('actionCancel')}" onclick="confirmCancel('${id}')"><i class="fa-solid fa-xmark"></i></button>`);
+    }
+    return `
+      <div class="status-actions">
+        <span class="status-chip-btn current ${status}">${t('status'+status.charAt(0).toUpperCase()+status.slice(1))}</span>
+        ${btns.join('')}
+      </div>`;
+  }
+
+  function laneCard(type, icon, titleKey, items){
+    if(items.length === 0){
+      return `<div class="col-lg-4"><div class="lane-card ${type}">
+        <div class="lane-head"><i class="fa-solid ${icon}"></i> ${t(titleKey)} <span class="chip ms-auto" style="background:rgba(255,255,255,.5);">0</span></div>
+        <div class="text-center faint py-4" style="font-size:.85rem;">${t('noAppointmentsLane')}</div>
+      </div></div>`;
+    }
+
+    const byProvider = {};
+    items.forEach(row => {
+      const key = row.providerId || 'x';
+      if(!byProvider[key]) byProvider[key] = { name: row.providerName, rows: [] };
+      byProvider[key].rows.push(row);
+    });
+
+    const groupsHtml = Object.values(byProvider).map(g => `
+      <div class="lane-provider-group">
+        <div class="lane-provider-name">${g.name}</div>
+        ${g.rows.sort((a,b) => a.time.localeCompare(b.time)).map(r => `
+          <div class="slot-row">
+            <div class="slot-time">${r.time}</div>
+            <div class="slot-info"><div class="p">${r.patientName}</div><div class="s">${r.serviceName}</div></div>
+            ${statusActionsHtml(r.id, r.status)}
+            <button class="btn btn-icon btn-soft btn-sm" data-action="share"
+              data-patient="${r.patientName}" data-service="${r.serviceName}" data-date="${r.date}" data-time="${r.time}"
+              data-provider="${r.providerName}" data-phone="${r.patientPhone||''}">
+              <i class="fa-solid fa-share-nodes"></i>
+            </button>
+          </div>`).join('')}
+      </div>`).join('');
+
+    return `<div class="col-lg-4"><div class="lane-card ${type}">
+      <div class="lane-head"><i class="fa-solid ${icon}"></i> ${t(titleKey)} <span class="chip ms-auto" style="background:rgba(255,255,255,.5);">${items.length}</span></div>
+      ${groupsHtml}
+    </div></div>`;
+  }
+
+  function render(){
+    const q = document.getElementById('searchBox').value.trim();
+    const patientById = Object.fromEntries(patients.map(p => [String(p.ID), p]));
+    const serviceById = Object.fromEntries(services.map(s => [String(s.ID), s]));
+    const providerById = Object.fromEntries(providers.map(p => [String(p.ID), p]));
+
+    let rows = appointments.map(a => {
+      const patient = patientById[String(a.PatientID)];
+      const service = serviceById[String(a.ServiceID)];
+      return {
+        id: a.ID, date: a.Date, time: a.Time, status: a.Status,
+        patientName: patient ? patient.Name : ('#' + a.PatientID),
+        patientPhone: patient ? patient.Phone : '',
+        serviceName: service ? service.Name : ('#' + a.ServiceID),
+        doctor: a.DoctorID ? { providerId:a.DoctorID, providerName:(providerById[String(a.DoctorID)]||{}).Name || '#'+a.DoctorID } : null,
+        nurse:  a.NurseID  ? { providerId:a.NurseID,  providerName:(providerById[String(a.NurseID)]||{}).Name  || '#'+a.NurseID }  : null,
+        device: a.DeviceID ? { providerId:a.DeviceID, providerName:(providerById[String(a.DeviceID)]||{}).Name || '#'+a.DeviceID } : null
+      };
+    });
+
+    if(q){
+      rows = rows.filter(r =>
+        r.patientName.includes(q) ||
+        (r.doctor && r.doctor.providerName.includes(q)) ||
+        (r.nurse && r.nurse.providerName.includes(q)) ||
+        (r.device && r.device.providerName.includes(q)));
+    }
+
+    const doctorItems = rows.filter(r => r.doctor).map(r => ({ ...r, providerId:r.doctor.providerId, providerName:r.doctor.providerName }));
+    const nurseItems  = rows.filter(r => r.nurse).map(r => ({ ...r, providerId:r.nurse.providerId, providerName:r.nurse.providerName }));
+    const deviceItems = rows.filter(r => r.device).map(r => ({ ...r, providerId:r.device.providerId, providerName:r.device.providerName }));
+
+    document.getElementById('lanesRow').innerHTML =
+      laneCard('doctor', 'fa-user-doctor', 'laneDoctors', doctorItems) +
+      laneCard('nurse',  'fa-user-nurse',  'laneNurses', nurseItems) +
+      laneCard('device', 'fa-radiation',   'laneDevices', deviceItems);
+
+    initShareButtons(document.getElementById('lanesRow'));
+  }
+
+  document.getElementById('searchBox').addEventListener('input', render);
+
+  async function updateStatus(id, status){
+    try{
+      await Api.updateAppointmentStatus(id, status);
+      const a = appointments.find(x => String(x.ID) === String(id));
+      if(a) a.Status = status;
+      render();
+      Swal.fire({ toast:true, position:'top-start', icon:'success', title: t('statusUpdated'), showConfirmButton:false, timer:1200 });
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    }
+  }
+
+  function confirmCancel(id){
+    Swal.fire({
+      title: t('cancelApptTitle'), text: t('cancelApptText'), icon:'warning',
+      showCancelButton:true, confirmButtonText: t('cancelApptConfirm'), cancelButtonText: t('keepBooking'),
+      confirmButtonColor:'#BE4B3B', cancelButtonColor:'#8B9C98', reverseButtons:true
+    }).then(res => { if(res.isConfirmed) updateStatus(id, 'cancelled'); });
+  }
+
+  async function loadDay(){
+    updateDateLabel();
+    if(!Api.isConfigured()) return;
+    document.getElementById('lanesRow').innerHTML = `<div class="col-12 text-center faint py-5">${t('loading')}</div>`;
+    try{
+      const [p, s, pr, appts] = await Promise.all([
+        patients.length ? patients : Api.getPatients(),
+        services.length ? services : Api.getServices(),
+        providers.length ? providers : Api.getProviders(),
+        Api.getAppointments(dateInput.value)
+      ]);
+      patients = p; services = s; providers = pr; appointments = appts;
+      render();
+    } catch(err){
+      document.getElementById('lanesRow').innerHTML = `<div class="col-12 text-center py-5" style="color:var(--danger);">${err.message}</div>`;
+    }
+  }
+
+  loadDay();
+</script>
+</body>
+</html>
