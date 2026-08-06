@@ -17,15 +17,32 @@ async function ensureSettingsCache(){
   return __settingsCache;
 }
 
+const DEFAULT_WHATSAPP_TEMPLATE =
+  'مرحبًا {patient} 👋\nتم تأكيد حجزك في {center}:\n🩺 الخدمة: {service}\n📅 التاريخ: {date}\n⏰ الوقت: {time}\n👨\u200d⚕️ الطبيب: {doctor}\n👩\u200d⚕️ الممرضة: {nurse}\n🩻 الجهاز: {device}\nنرجو الحضور قبل الموعد بـ 10 دقائق.';
+
 function buildAppointmentMessage(data){
-  const tpl = (__settingsCache && __settingsCache.whatsappTemplate) ||
-    'مرحبًا {patient} 👋\nتم تأكيد حجزك في {center}:\n🩺 الخدمة: {service}\n📅 التاريخ: {date}\n⏰ الوقت: {time}\nنرجو الحضور قبل الموعد بـ 10 دقائق.';
-  return tpl
-    .replace(/{patient}/g, data.patient || '')
-    .replace(/{center}/g, data.center || (Config && Config.CENTER_NAME) || '')
-    .replace(/{service}/g, data.service || '')
-    .replace(/{date}/g, data.date || '')
-    .replace(/{time}/g, data.time || '');
+  const tpl = (__settingsCache && __settingsCache.whatsappTemplate) || DEFAULT_WHATSAPP_TEMPLATE;
+  const vars = {
+    patient: data.patient || '',
+    center:  data.center || (Config && Config.CENTER_NAME) || '',
+    service: data.service || '',
+    date:    data.date || '',
+    time:    data.time || '',
+    doctor:  data.doctor || '',
+    nurse:   data.nurse || '',
+    device:  data.device || ''
+  };
+  // مقدمو الخدمة (طبيب/ممرضة/جهاز) اختياريون حسب الخدمة — لو مفيش قيمة للمتغير، نحذف السطر بالكامل
+  // بدل ما يظهر السطر فاضي (مثلاً "الجهاز: " من غير اسم) في الرسالة المُرسلة فعليًا.
+  const optionalKeys = ['doctor', 'nurse', 'device'];
+  const lines = tpl.split('\n').filter(line =>
+    !optionalKeys.some(k => line.includes('{' + k + '}') && !vars[k])
+  );
+  let msg = lines.join('\n');
+  Object.keys(vars).forEach(k => {
+    msg = msg.split('{' + k + '}').join(vars[k]);
+  });
+  return msg;
 }
 
 function normalizePhone(phone){
@@ -119,6 +136,9 @@ function initShareButtons(root){
         date:     btn.getAttribute('data-date'),
         time:     btn.getAttribute('data-time'),
         provider: btn.getAttribute('data-provider'),
+        doctor:   btn.getAttribute('data-doctor') || '',
+        nurse:    btn.getAttribute('data-nurse') || '',
+        device:   btn.getAttribute('data-device') || '',
         phone:    btn.getAttribute('data-phone')
       });
     });

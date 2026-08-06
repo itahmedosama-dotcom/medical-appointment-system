@@ -613,6 +613,140 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .captcha-box span:nth-child(odd){ color: var(--teal-dark); }
 .captcha-box span:nth-child(even){ color: #2C6FA8; }
 
+/* ============================================================
+   Calendar timeline — column per provider, blocks positioned by
+   actual time (like a resource-scheduling calendar), instead of
+   a flat grouped list.
+   ============================================================ */
+.cal-container{
+  position: relative;
+  overflow: auto;
+  max-height: 72vh;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-sm);
+}
+.cal-inner{
+  position: relative;
+  display: flex;
+  min-width: max-content;
+}
+.cal-time-col{
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 3;
+  width: 60px;
+  flex-shrink: 0;
+  background: var(--paper-raised);
+  border-inline-end: 1px solid var(--line);
+}
+.cal-corner{
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 64px;
+  background: var(--paper-raised);
+  border-bottom: 1px solid var(--line);
+}
+.cal-hour-label{
+  height: 64px;
+  box-sizing: border-box;
+  font-size: .66rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: center;
+  padding-top: 3px;
+  border-bottom: 1px dashed var(--paper-sunken);
+}
+.cal-col{
+  width: 208px;
+  flex-shrink: 0;
+  border-inline-end: 1px solid var(--line);
+  position: relative;
+}
+.cal-col-header{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 64px;
+  background: var(--paper-raised);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .15rem;
+  padding: .3rem;
+}
+.cal-col-header .cal-avatar{
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .72rem;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.cal-col-header .cal-name{
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.cal-col-body{
+  position: relative;
+  background-image: repeating-linear-gradient(to bottom, var(--paper-sunken) 0, var(--paper-sunken) 1px, transparent 1px, transparent 64px);
+}
+.cal-block{
+  position: absolute;
+  inset-inline: 3px;
+  border-radius: 8px;
+  padding: .28rem .45rem;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: .72rem;
+  line-height: 1.25;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(20,43,39,.12);
+  z-index: 2;
+}
+.cal-block:hover{ filter: brightness(0.97); box-shadow: 0 3px 8px rgba(20,43,39,.18); }
+.cal-block .cal-b-time{ font-weight: 800; font-family: var(--font-mono); font-size: .65rem; }
+.cal-block .cal-b-patient{ font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-block .cal-b-service{ opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .66rem; }
+.cal-block.booked{ background: var(--warning-tint); border-color: #EFD9A6; color: #7A5A12; }
+.cal-block.arrived{ background: #DDEBF8; border-color: #BFDBF2; color: #204A72; }
+.cal-block.done{ background: var(--success-tint); border-color: #BFE3CC; color: #1D5C3B; }
+.cal-block.cancelled{ background: var(--danger-tint); border-color: #F1C7BE; color: #7C2E22; text-decoration: line-through; opacity: .7; z-index: 1; }
+
+.cal-now-line{
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 5;
+  pointer-events: none;
+}
+.cal-now-line .cal-now-badge{
+  position: absolute;
+  inset-inline-start: 2px;
+  top: -9px;
+  background: var(--danger);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+}
+.cal-empty-col{
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-faint); font-size: .8rem; height: 100%; padding: 2rem 1rem;
+}
+
 /* Sidebar mobile */
 @media (max-width: 991.98px){
   .app-sidebar{

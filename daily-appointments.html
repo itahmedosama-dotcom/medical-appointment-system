@@ -59,16 +59,28 @@
         <div>
           <div class="eyebrow" id="dateLabel">اليوم</div>
           <h1 data-i18n="dailyTitle">الحجوزات اليومية</h1>
-          <p data-i18n="dailySubtitle">العرض حسب مقدم الخدمة.</p>
+          <p data-i18n="clickBlockHint">اضغط على أي حجز في الجدول لعرض التفاصيل وتغيير الحالة.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+          <ul class="nav pill-toggle" style="width:fit-content;" id="viewToggle">
+            <li><button class="active" type="button" data-view="calendar"><i class="fa-solid fa-table-columns me-1"></i> <span data-i18n="viewCalendar">تقويم</span></button></li>
+            <li><button type="button" data-view="list"><i class="fa-solid fa-list me-1"></i> <span data-i18n="viewList">قائمة</span></button></li>
+          </ul>
           <input type="date" class="form-control" id="dateFilter" style="width:auto;">
           <a href="booking.html" class="btn btn-teal"><i class="fa-solid fa-plus me-1"></i> <span data-i18n="newBooking">حجز جديد</span></a>
         </div>
       </div>
 
-      <div class="row g-3" id="lanesRow">
-        <div class="col-12 text-center faint py-5" data-i18n="loading">جارِ التحميل...</div>
+      <div id="calendarView">
+        <div id="calHost">
+          <div class="cal-empty-col py-5" data-i18n="loading">جارِ التحميل...</div>
+        </div>
+      </div>
+
+      <div id="listView" class="d-none">
+        <div class="row g-3" id="lanesRow">
+          <div class="col-12 text-center faint py-5" data-i18n="loading">جارِ التحميل...</div>
+        </div>
       </div>
 
       <p class="faint text-center mt-4 mb-0" style="font-size:.82rem;">
@@ -76,6 +88,27 @@
         <span data-i18n="shareHintDaily">أيقونة المشاركة بجانب كل حجز تفتح نافذة لإرساله.</span>
       </p>
     </main>
+  </div>
+</div>
+
+<!-- Appointment Detail Modal (opens on clicking a calendar block) -->
+<div class="modal fade" id="apptDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header"><h5 class="modal-title" data-i18n="apptDetailsTitle">تفاصيل الحجز</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="lane-card doctor mb-3">
+          <div class="p-3">
+            <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="patientLabel">العميل</span><b id="apptDetailPatient">-</b></div>
+            <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="serviceLabel">الخدمة</span><b id="apptDetailService">-</b></div>
+            <div class="d-flex justify-content-between mb-2"><span class="muted" data-i18n="dateLabel">الموعد</span><b class="text-mono" id="apptDetailDateTime">-</b></div>
+            <div class="d-flex justify-content-between"><span class="muted" data-i18n="previewProvidersLabel">مقدمو الخدمة</span><span id="apptDetailProviders">-</span></div>
+          </div>
+        </div>
+        <div id="apptDetailActions" class="d-flex flex-wrap justify-content-center gap-2 mb-3"></div>
+        <button type="button" class="btn btn-soft w-100" id="apptDetailShareBtn"><i class="fa-solid fa-share-nodes me-1"></i> <span data-i18n="shareBtn">مشاركة</span></button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -120,11 +153,23 @@
   const user = requireAuth();
   if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
 
-  let patients = [], services = [], providers = [], appointments = [];
+  let patients = [], services = [], providers = [], appointments = [], settingsCache = {};
+  let activeView = 'calendar';
 
   const dateInput = document.getElementById('dateFilter');
   dateInput.value = new Date().toISOString().slice(0,10);
   dateInput.addEventListener('change', loadDay);
+
+  document.querySelectorAll('#viewToggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#viewToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeView = btn.getAttribute('data-view');
+      document.getElementById('calendarView').classList.toggle('d-none', activeView !== 'calendar');
+      document.getElementById('listView').classList.toggle('d-none', activeView !== 'list');
+      render();
+    });
+  });
 
   function updateDateLabel(){
     const d = new Date(dateInput.value);
@@ -132,7 +177,16 @@
   }
 
   function render(){
-    renderLanesInto('lanesRow', appointments, patients, services, providers, document.getElementById('searchBox').value);
+    // متاحة لدالة openApptDetail المشتركة في lanes.js لأنها بتتنادى من onclick خام
+    window.__calPatients = patients;
+    window.__calServices = services;
+    window.__calProviders = providers;
+
+    if(activeView === 'calendar'){
+      renderCalendarGrid('calHost', appointments, patients, services, providers, settingsCache, document.getElementById('searchBox').value);
+    } else {
+      renderLanesInto('lanesRow', appointments, patients, services, providers, document.getElementById('searchBox').value);
+    }
   }
 
   document.getElementById('searchBox').addEventListener('input', render);
@@ -143,6 +197,8 @@
       const a = appointments.find(x => String(x.ID) === String(id));
       if(a) a.Status = status;
       render();
+      const modalEl = document.getElementById('apptDetailModal');
+      bootstrap.Modal.getInstance(modalEl)?.hide();
       Swal.fire({ toast:true, position:'top-start', icon:'success', title: t('statusUpdated'), showConfirmButton:false, timer:1200 });
     } catch(err){
       Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
@@ -160,17 +216,20 @@
   async function loadDay(){
     updateDateLabel();
     if(!Api.isConfigured()) return;
+    document.getElementById('calHost').innerHTML = `<div class="cal-empty-col py-5">${t('loading')}</div>`;
     document.getElementById('lanesRow').innerHTML = `<div class="col-12 text-center faint py-5">${t('loading')}</div>`;
     try{
-      const [p, s, pr, appts] = await Promise.all([
+      const [p, s, pr, appts, st] = await Promise.all([
         patients.length ? patients : Api.getPatients(),
         services.length ? services : Api.getServices(),
         providers.length ? providers : Api.getProviders(),
-        Api.getAppointments(dateInput.value)
+        Api.getAppointments(dateInput.value),
+        Object.keys(settingsCache).length ? settingsCache : Api.getSettings()
       ]);
-      patients = p; services = s; providers = pr; appointments = appts;
+      patients = p; services = s; providers = pr; appointments = appts; settingsCache = st;
       render();
     } catch(err){
+      document.getElementById('calHost').innerHTML = `<div class="cal-empty-col py-5" style="color:var(--danger);">${err.message}</div>`;
       document.getElementById('lanesRow').innerHTML = `<div class="col-12 text-center py-5" style="color:var(--danger);">${err.message}</div>`;
     }
   }

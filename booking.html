@@ -342,14 +342,18 @@
     if(!lastCreatedAppointment) return;
     const patient = patients.find(p => String(p.ID) === String(lastCreatedAppointment.PatientID));
     const svc = services.find(s => String(s.ID) === String(lastCreatedAppointment.ServiceID));
-    const providerId = lastCreatedAppointment.DoctorID || lastCreatedAppointment.NurseID || lastCreatedAppointment.DeviceID;
-    const provider = providers.find(p => String(p.ID) === String(providerId));
+    const doctorName = lastCreatedAppointment.DoctorID ? (providers.find(p => String(p.ID) === String(lastCreatedAppointment.DoctorID)) || {}).Name : '';
+    const nurseName  = lastCreatedAppointment.NurseID  ? (providers.find(p => String(p.ID) === String(lastCreatedAppointment.NurseID))  || {}).Name : '';
+    const deviceName = lastCreatedAppointment.DeviceID ? (providers.find(p => String(p.ID) === String(lastCreatedAppointment.DeviceID)) || {}).Name : '';
     openShareModal({
       patient: patient ? patient.Name : '-',
       service: svc ? svc.Name : '-',
       date: lastCreatedAppointment.Date,
       time: lastCreatedAppointment.Time,
-      provider: provider ? provider.Name : '-',
+      provider: [doctorName, nurseName, deviceName].filter(Boolean).join('، ') || '-',
+      doctor: doctorName || '',
+      nurse: nurseName || '',
+      device: deviceName || '',
       phone: patient ? patient.Phone : ''
     });
   });

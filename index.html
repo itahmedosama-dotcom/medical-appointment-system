@@ -242,6 +242,9 @@
           const pname = patient ? patient.Name : ('#' + r.PatientID);
           const sname = service ? service.Name : ('#' + r.ServiceID);
           const provName = provider ? provider.Name : '-';
+          const doctorName = r.DoctorID ? (providerById[String(r.DoctorID)]||{}).Name : '';
+          const nurseName  = r.NurseID  ? (providerById[String(r.NurseID)] ||{}).Name : '';
+          const deviceName = r.DeviceID ? (providerById[String(r.DeviceID)]||{}).Name : '';
           return `<tr>
             <td class="name-cell"><div class="avatar">${pname[0]||'?'}</div> ${pname}</td>
             <td>${sname}</td>
@@ -251,7 +254,8 @@
             <td class="text-end">
               <button class="btn btn-icon btn-whatsapp btn-sm" data-action="share"
                 data-patient="${pname}" data-service="${sname}" data-date="${r.Date}" data-time="${r.Time}"
-                data-provider="${provName}" data-phone="${patient ? patient.Phone : ''}">
+                data-provider="${provName}" data-doctor="${doctorName||''}" data-nurse="${nurseName||''}" data-device="${deviceName||''}"
+                data-phone="${patient ? patient.Phone : ''}">
                 <i class="fa-solid fa-share-nodes"></i>
               </button>
             </td>
