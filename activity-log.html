@@ -62,6 +62,7 @@
         <ul class="nav pill-toggle" style="width:fit-content;" id="actionFilter">
           <li><button class="active" type="button" data-action="all" data-i18n="filterAll">الكل</button></li>
           <li><button type="button" data-action="create" data-i18n="actionCreate">حجز جديد</button></li>
+          <li><button type="button" data-action="confirmbooking" data-i18n="actionConfirmBooking">تأكيد الحجز</button></li>
           <li><button type="button" data-action="checkin" data-i18n="actionCheckIn">تسجيل حضور</button></li>
           <li><button type="button" data-action="complete" data-i18n="actionComplete">إنهاء</button></li>
           <li><button type="button" data-action="cancel" data-i18n="actionCancel">إلغاء</button></li>
@@ -103,11 +104,11 @@
   if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
 
   const ACTION_LABEL_KEYS = {
-    create: 'actionCreate', checkin: 'actionCheckIn', complete: 'actionComplete',
+    create: 'actionCreate', confirmbooking: 'actionConfirmBooking', checkin: 'actionCheckIn', complete: 'actionComplete',
     cancel: 'actionCancel', restore: 'actionReopen', delete: 'actionDelete'
   };
   const ACTION_BADGE_CLASS = {
-    create: 'booked', checkin: 'arrived', complete: 'done', cancel: 'cancelled', restore: 'arrived', delete: 'cancelled'
+    create: 'booked', confirmbooking: 'confirmed', checkin: 'arrived', complete: 'done', cancel: 'cancelled', restore: 'arrived', delete: 'cancelled'
   };
 
   let logCache = [];

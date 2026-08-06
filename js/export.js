@@ -62,6 +62,14 @@ function normalizePhone(phone){
   return digits;
 }
 
+/** يبني رابط واتساب جاهز لبيانات حجز معيّنة، أو null لو مفيش رقم هاتف صالح */
+function buildWhatsAppUrl(data){
+  const phone = normalizePhone(data.phone);
+  if(!phone) return null;
+  const text = encodeURIComponent(buildAppointmentMessage(data));
+  return `https://wa.me/${phone}?text=${text}`;
+}
+
 /** data = { patient, service, date, time, provider, phone, center } */
 async function openShareModal(data){
   await ensureSettingsCache();
@@ -75,23 +83,31 @@ async function openShareModal(data){
   document.getElementById('shareCardCenter').textContent = data.center || '-';
   const refEl = document.getElementById('shareCardRef');
   if(refEl) refEl.textContent = data.bookingId ? formatBookingRef(data.bookingId) : '-';
+  const logoEl = document.getElementById('shareCardLogo');
+  if(logoEl){
+    if(__settingsCache && __settingsCache.centerLogo){
+      logoEl.src = __settingsCache.centerLogo;
+      logoEl.style.display = 'block';
+    } else {
+      logoEl.style.display = 'none';
+    }
+  }
 
   const waBtn = document.getElementById('shareWhatsappBtn');
   if(waBtn){
-    waBtn.onclick = () => {
-      const phone = normalizePhone(data.phone);
-      if(!phone){
+    const phone = normalizePhone(data.phone);
+    if(!phone){
+      waBtn.href = '#';
+      waBtn.onclick = (e) => {
+        e.preventDefault();
         alertToast(typeof t === 'function' ? t('noPhoneWarning') : 'لا يوجد رقم هاتف مسجل لهذا المريض', 'warning');
-        return;
-      }
+      };
+    } else {
       const text = encodeURIComponent(buildAppointmentMessage(data));
-      const url = `https://wa.me/${phone}?text=${text}`;
-      const win = window.open(url, '_blank', 'noopener');
-      // بعض المتصفحات تمنع النوافذ المنبثقة — لو اتمنعت، اعرض رابط مباشر بدل ما نفشل بصمت
-      if(!win || win.closed || typeof win.closed === 'undefined'){
-        waBtn.outerHTML = `<a href="${url}" target="_blank" rel="noopener" class="share-option-btn whatsapp" style="text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> ${typeof t === 'function' ? t('shareWhatsapp') : 'إرسال عبر واتساب ويب'}</a>`;
-      }
-    };
+      // رابط <a> حقيقي بدل window.open — الطريقة الموثوقة اللي متتأثرش بمنع النوافذ المنبثقة في المتصفحات
+      waBtn.href = `https://wa.me/${phone}?text=${text}`;
+      waBtn.onclick = null;
+    }
   }
   const pngBtn = document.getElementById('sharePngBtn');
   if(pngBtn) pngBtn.onclick = () => exportShareCard('png', data);
@@ -105,11 +121,56 @@ async function openShareModal(data){
 
 function exportShareCard(format, data){
   const card = document.getElementById('shareCardPrintable');
+  exportCardCanvas(card, format, data);
+}
+
+/**
+ * نسخة مستقلة تمامًا عن أي Modal: بتبني بطاقة مؤقتة بره حدود الشاشة (نفس تصميم بطاقة
+ * المشاركة)، تصدّرها كصورة/PDF، وتشيلها فورًا. تُستخدم من نافذة "تفاصيل الحجز" في التقويم
+ * عشان نتفادى مشكلة تعارض فتح Modal فوق Modal تاني بيتقفل.
+ */
+async function exportBookingCardStandalone(format, data){
+  await ensureSettingsCache();
+  const center = data.center || __settingsCache.centerName || (Config && Config.CENTER_NAME) || '';
+  const logo = __settingsCache.centerLogo
+    ? `<img src="${__settingsCache.centerLogo}" style="width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
+    : '';
+  const tt = (k, fallback) => (typeof t === 'function' ? t(k) : fallback);
+
+  const temp = document.createElement('div');
+  temp.style.position = 'fixed';
+  temp.style.insetInlineStart = '-9999px';
+  temp.style.top = '0';
+  temp.innerHTML = `
+    <div class="printable-card" id="__standaloneExportCard">
+      <div class="pc-head" style="display:flex;align-items:center;gap:.6rem;">
+        ${logo}
+        <div><span>${center}</span><small>${tt('shareCardSubtitle','تأكيد حجز موعد')}</small></div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-row"><span>${tt('shareBookingRef','رقم الحجز')}</span><span>${data.bookingId ? formatBookingRef(data.bookingId) : '-'}</span></div>
+        <div class="pc-row"><span>${tt('shareClient','العميل')}</span><span>${data.patient || '-'}</span></div>
+        <div class="pc-row"><span>${tt('shareService','الخدمة')}</span><span>${data.service || '-'}</span></div>
+        <div class="pc-row"><span>${tt('shareDate','التاريخ')}</span><span>${data.date || '-'}</span></div>
+        <div class="pc-row"><span>${tt('shareTime','الوقت')}</span><span>${data.time || '-'}</span></div>
+        <div class="pc-row"><span>${tt('shareProvider','مقدم الخدمة')}</span><span>${data.provider || '-'}</span></div>
+      </div>
+    </div>`;
+  document.body.appendChild(temp);
+
+  try{
+    await exportCardCanvas(temp.querySelector('#__standaloneExportCard'), format, data);
+  } finally {
+    document.body.removeChild(temp);
+  }
+}
+
+function exportCardCanvas(card, format, data){
   if(typeof html2canvas === 'undefined'){
     alertToast('تعذّر تحميل مكتبة التصدير (html2canvas)', 'error');
-    return;
+    return Promise.resolve();
   }
-  html2canvas(card, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+  return html2canvas(card, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
     const safeName = (data.patient || 'booking').replace(/\s+/g, '-');
     if(format === 'png'){
       const link = document.createElement('a');

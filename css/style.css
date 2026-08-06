@@ -395,6 +395,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   border: none;
 }
 .status-badge.booked{ background: var(--warning-tint); color: var(--warning); }
+.status-badge.confirmed{ background: var(--teal-tint); color: var(--teal-dark); }
 .status-badge.arrived{ background: #DDEBF8; color: #2C6FA8; }
 .status-badge.done{ background: var(--success-tint); color: var(--success); }
 .status-badge.cancelled{ background: var(--danger-tint); color: var(--danger); }
@@ -519,10 +520,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   width:100%; padding:.85rem 1rem; border-radius: var(--radius);
   border:1px solid var(--line); background:#fff; text-align:right;
   font-weight:700; font-size:.9rem; color: var(--ink);
+  text-decoration: none;
 }
 .share-option-btn i{ width:22px; text-align:center; font-size:1.05rem; }
 .share-option-btn:hover{ background: var(--paper-sunken); }
 .share-option-btn.whatsapp i{ color:#22885B; }
+.share-option-btn.is-loading{ opacity: .55; pointer-events: none; }
 .share-option-btn.png i{ color: var(--teal); }
 .share-option-btn.pdf i{ color: var(--danger); }
 
@@ -577,6 +580,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   cursor: pointer;
 }
 .status-chip-btn:hover{ background: var(--paper-sunken); }
+.status-chip-btn.confirmbooking{ color: var(--teal-dark); }
+.status-chip-btn.confirmbooking:hover{ background: var(--teal-tint); border-color:#BEDCD6; }
 .status-chip-btn.checkin{ color:#2C6FA8; }
 .status-chip-btn.checkin:hover{ background:#DDEBF8; border-color:#BFDBF2; }
 .status-chip-btn.complete{ color: var(--success); }
@@ -590,6 +595,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   cursor: default;
 }
 .status-chip-btn.current.booked{ background: var(--warning-tint); color: var(--warning); border-color: transparent; }
+.status-chip-btn.current.confirmed{ background: var(--teal-tint); color: var(--teal-dark); border-color: transparent; }
 .status-chip-btn.current.arrived{ background:#DDEBF8; color:#2C6FA8; border-color: transparent; }
 .status-chip-btn.current.done{ background: var(--success-tint); color: var(--success); border-color: transparent; }
 .status-chip-btn.current.cancelled{ background: var(--danger-tint); color: var(--danger); border-color: transparent; }
@@ -719,6 +725,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .cal-block .cal-b-patient{ font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-block .cal-b-service{ opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .66rem; }
 .cal-block.booked{ background: var(--warning-tint); border-color: #EFD9A6; color: #7A5A12; }
+.cal-block.confirmed{ background: var(--teal-tint); border-color: #BEDCD6; color: #0D4A43; }
 .cal-block.arrived{ background: #DDEBF8; border-color: #BFDBF2; color: #204A72; }
 .cal-block.done{ background: var(--success-tint); border-color: #BFE3CC; color: #1D5C3B; }
 .cal-block.cancelled{ background: var(--danger-tint); border-color: #F1C7BE; color: #7C2E22; text-decoration: line-through; opacity: .7; z-index: 1; }

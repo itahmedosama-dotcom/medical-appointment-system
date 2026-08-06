@@ -69,6 +69,16 @@
             <i class="fa-solid fa-trash-can-arrow-up me-1"></i> <span data-i18n="cancelledBtn">الملغاة</span>
             <span id="cancelledCount" class="chip" style="background:var(--danger-tint);color:var(--danger);position:absolute;top:-8px;inset-inline-start:-8px;display:none;">0</span>
           </button>
+          <div class="dropdown">
+            <button type="button" class="btn btn-soft dropdown-toggle" data-bs-toggle="dropdown">
+              <i class="fa-solid fa-file-export me-1"></i> <span data-i18n="exportBtn">تصدير</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" onclick="exportDayView('pdf');return false;"><i class="fa-regular fa-file-pdf me-2" style="color:var(--danger);"></i> <span data-i18n="exportPdf">PDF</span></a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportDayView('png');return false;"><i class="fa-regular fa-image me-2" style="color:var(--teal);"></i> <span data-i18n="exportImage">صورة</span></a></li>
+              <li><a class="dropdown-item" href="#" onclick="exportExcel();return false;"><i class="fa-regular fa-file-excel me-2" style="color:var(--success);"></i> <span data-i18n="exportExcel">Excel</span></a></li>
+            </ul>
+          </div>
           <a href="booking.html" class="btn btn-teal"><i class="fa-solid fa-plus me-1"></i> <span data-i18n="newBooking">حجز جديد</span></a>
         </div>
       </div>
@@ -109,7 +119,11 @@
           </div>
         </div>
         <div id="apptDetailActions" class="d-flex flex-wrap justify-content-center gap-2 mb-3"></div>
-        <button type="button" class="btn btn-soft w-100" id="apptDetailShareBtn"><i class="fa-solid fa-share-nodes me-1"></i> <span data-i18n="shareBtn">مشاركة</span></button>
+        <div class="d-flex flex-column gap-2">
+          <a href="#" target="_blank" rel="noopener" class="share-option-btn whatsapp" id="apptShareWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> <span data-i18n="shareWhatsapp">إرسال عبر واتساب ويب</span></a>
+          <button type="button" class="share-option-btn png" id="apptSharePngBtn"><i class="fa-regular fa-image"></i> <span data-i18n="sharePng">تحميل كصورة (PNG)</span></button>
+          <button type="button" class="share-option-btn pdf" id="apptSharePdfBtn"><i class="fa-regular fa-file-pdf"></i> <span data-i18n="sharePdf">تحميل كـ PDF</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -137,7 +151,10 @@
       <div class="modal-header"><h5 class="modal-title" data-i18n="shareModalTitle">مشاركة الحجز</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body">
         <div id="shareCardPrintable" class="printable-card mb-3">
-          <div class="pc-head"><span id="shareCardCenter">برنامج حجز عيادات</span><small data-i18n="shareCardSubtitle">تأكيد حجز موعد</small></div>
+          <div class="pc-head" style="display:flex;align-items:center;gap:.6rem;">
+            <img id="shareCardLogo" src="" style="display:none;width:34px;height:34px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+            <div><span id="shareCardCenter">برنامج حجز عيادات</span><small data-i18n="shareCardSubtitle">تأكيد حجز موعد</small></div>
+          </div>
           <div class="pc-body">
             <div class="pc-row"><span data-i18n="shareBookingRef">رقم الحجز</span><span id="shareCardRef" class="text-mono">-</span></div>
             <div class="pc-row"><span data-i18n="shareClient">العميل</span><span id="shareCardPatient">-</span></div>
@@ -148,7 +165,7 @@
           </div>
         </div>
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="share-option-btn whatsapp" id="shareWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> <span data-i18n="shareWhatsapp">إرسال عبر واتساب ويب</span></button>
+          <a href="#" target="_blank" rel="noopener" class="share-option-btn whatsapp" id="shareWhatsappBtn"><i class="fa-brands fa-whatsapp"></i> <span data-i18n="shareWhatsapp">إرسال عبر واتساب ويب</span></a>
           <button type="button" class="share-option-btn png" id="sharePngBtn"><i class="fa-regular fa-image"></i> <span data-i18n="sharePng">تحميل كصورة (PNG)</span></button>
           <button type="button" class="share-option-btn pdf" id="sharePdfBtn"><i class="fa-regular fa-file-pdf"></i> <span data-i18n="sharePdf">تحميل كـ PDF</span></button>
         </div>
@@ -161,6 +178,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
@@ -202,7 +220,7 @@
     window.__calProviders = providers;
 
     if(activeView === 'calendar'){
-      renderCalendarGrid('calHost', appointments, patients, services, providers, settingsCache, document.getElementById('searchBox').value);
+      renderCalendarGrid('calHost', appointments, patients, services, providers, settingsCache, document.getElementById('searchBox').value, dateInput.value);
     } else {
       renderLanesInto('lanesRow', appointments, patients, services, providers, document.getElementById('searchBox').value);
     }
@@ -305,10 +323,97 @@
       patients = p; services = s; providers = pr; appointments = appts; settingsCache = st;
       render();
       refreshCancelledList();
+      // نمرّر لحد خط الوقت الحالي تلقائيًا (لو ظاهر) بعد ما الشبكة تخلص وتترسم — مرة واحدة بس عند فتح اليوم
+      requestAnimationFrame(() => scrollCalendarToNow('calHost'));
     } catch(err){
       document.getElementById('calHost').innerHTML = `<div class="cal-empty-col py-5" style="color:var(--danger);">${err.message}</div>`;
       document.getElementById('lanesRow').innerHTML = `<div class="col-12 text-center py-5" style="color:var(--danger);">${err.message}</div>`;
     }
+  }
+
+  // ---------- تصدير اليوم كامل: PDF / صورة (للعرض الحالي — تقويم أو قائمة) أو Excel (بيانات) ----------
+  async function exportDayView(format){
+    if(typeof html2canvas === 'undefined'){
+      Swal.fire({ icon:'error', title: t('errorTitle'), confirmButtonColor:'#14685E' });
+      return;
+    }
+    const hostId = activeView === 'calendar' ? 'calHost' : 'lanesRow';
+    const host = document.getElementById(hostId);
+    const calContainer = host.querySelector('.cal-container');
+
+    // نفكّ القص والسكرول المؤقت لحاوية التقويم عشان الالتقاط ياخد كل الأعمدة والساعات، مش بس الجزء الظاهر
+    let prevStyle = null;
+    if(calContainer){
+      prevStyle = { maxHeight: calContainer.style.maxHeight, overflow: calContainer.style.overflow };
+      calContainer.style.maxHeight = 'none';
+      calContainer.style.overflow = 'visible';
+    }
+
+    Swal.fire({ title: t('exporting'), didOpen: () => Swal.showLoading(), allowOutsideClick: false, showConfirmButton: false });
+    try{
+      const canvas = await html2canvas(host, { scale: 2, backgroundColor: '#ffffff' });
+      const filename = `daily-appointments-${dateInput.value}`;
+      if(format === 'png'){
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } else {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ unit: 'px', format: [canvas.width, canvas.height] });
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`${filename}.pdf`);
+      }
+      Swal.close();
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    } finally {
+      if(calContainer && prevStyle){
+        calContainer.style.maxHeight = prevStyle.maxHeight;
+        calContainer.style.overflow = prevStyle.overflow;
+      }
+    }
+  }
+
+  function exportExcel(){
+    if(typeof XLSX === 'undefined'){
+      Swal.fire({ icon:'error', title: t('errorTitle'), confirmButtonColor:'#14685E' });
+      return;
+    }
+    const patientById = Object.fromEntries(patients.map(p => [String(p.ID), p]));
+    const serviceById = Object.fromEntries(services.map(s => [String(s.ID), s]));
+    const providerById = Object.fromEntries(providers.map(p => [String(p.ID), p]));
+    const statusLabels = {
+      booked: t('statusBooked'), confirmed: t('statusConfirmed'), arrived: t('statusArrived'),
+      done: t('statusDone'), cancelled: t('statusCancelled')
+    };
+
+    const rows = appointments.map(a => {
+      const patient = patientById[String(a.PatientID)];
+      const service = serviceById[String(a.ServiceID)];
+      const row = {};
+      row[t('shareBookingRef')] = formatBookingRef(a.ID);
+      row[t('colPatient')] = patient ? patient.Name : a.PatientID;
+      row[t('colPhone')] = patient ? patient.Phone : '';
+      row[t('serviceLabel')] = service ? service.Name : a.ServiceID;
+      row[t('dateLabel')] = a.Date;
+      row[t('timeLabel')] = a.Time;
+      row[t('colStatus')] = statusLabels[a.Status] || a.Status;
+      row[t('doctorLabel')] = a.DoctorID ? ((providerById[String(a.DoctorID)] || {}).Name || '') : '';
+      row[t('nurseLabel')] = a.NurseID ? ((providerById[String(a.NurseID)] || {}).Name || '') : '';
+      row[t('deviceLabel')] = a.DeviceID ? ((providerById[String(a.DeviceID)] || {}).Name || '') : '';
+      return row;
+    });
+
+    if(rows.length === 0){
+      Swal.fire({ icon:'info', title: t('noAppointmentsLane'), confirmButtonColor:'#14685E' });
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Appointments');
+    XLSX.writeFile(wb, `daily-appointments-${dateInput.value}.xlsx`);
   }
 
   loadDay();

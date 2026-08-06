@@ -98,10 +98,11 @@
         <div class="card-header" data-i18n="statusDistribution">توزيع الحالات</div>
         <div class="card-body">
           <div class="row g-3 text-center">
-            <div class="col-3"><div class="kpi-value" id="statusBooked">0</div><div class="kpi-label" data-i18n="statusBooked">محجوز</div></div>
-            <div class="col-3"><div class="kpi-value" id="statusArrived">0</div><div class="kpi-label" data-i18n="statusArrived">حضر</div></div>
-            <div class="col-3"><div class="kpi-value" id="statusDone">0</div><div class="kpi-label" data-i18n="statusDone">انتهى</div></div>
-            <div class="col-3"><div class="kpi-value" id="statusCancelled">0</div><div class="kpi-label" data-i18n="statusCancelled">ملغي</div></div>
+            <div class="col"><div class="kpi-value" id="statusBooked">0</div><div class="kpi-label" data-i18n="statusBooked">محجوز</div></div>
+            <div class="col"><div class="kpi-value" id="statusConfirmed">0</div><div class="kpi-label" data-i18n="statusConfirmed">تم التأكيد</div></div>
+            <div class="col"><div class="kpi-value" id="statusArrived">0</div><div class="kpi-label" data-i18n="statusArrived">حضر</div></div>
+            <div class="col"><div class="kpi-value" id="statusDone">0</div><div class="kpi-label" data-i18n="statusDone">انتهى</div></div>
+            <div class="col"><div class="kpi-value" id="statusCancelled">0</div><div class="kpi-label" data-i18n="statusCancelled">ملغي</div></div>
           </div>
         </div>
       </div>
@@ -145,6 +146,7 @@
       document.getElementById('kpiDone').textContent = summary.byStatus.done || 0;
 
       document.getElementById('statusBooked').textContent = summary.byStatus.booked || 0;
+      document.getElementById('statusConfirmed').textContent = summary.byStatus.confirmed || 0;
       document.getElementById('statusArrived').textContent = summary.byStatus.arrived || 0;
       document.getElementById('statusDone').textContent = summary.byStatus.done || 0;
       document.getElementById('statusCancelled').textContent = summary.byStatus.cancelled || 0;

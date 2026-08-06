@@ -7,12 +7,15 @@
 
 /**
  * أزرار إجراء تفاعلية بلمسة واحدة — لكن مقيّدة بترتيب المراحل الثابت:
- * محجوز ← حضر ← انتهى (مينفعش نقفز مرحلة). الإلغاء متاح من محجوز/حضر فقط،
- * والاسترجاع متاح من ملغي فقط (وبيتفحص تعارض على السيرفر وقت الاسترجاع).
+ * محجوز ← تأكيد الحجز ← حضر ← انتهى (مينفعش نقفز مرحلة). الإلغاء متاح من أي مرحلة نشطة
+ * قبل "انتهى"، والاسترجاع متاح من ملغي فقط (وبيتفحص تعارض على السيرفر وقت الاسترجاع).
  */
 function statusActionsHtml(id, status){
   const btns = [];
   if(status === 'booked'){
+    btns.push(`<button class="status-chip-btn confirmbooking" title="${t('actionConfirmBooking')}" onclick="updateStatus('${id}','confirmed')"><i class="fa-solid fa-check"></i></button>`);
+    btns.push(`<button class="status-chip-btn cancel" title="${t('actionCancel')}" onclick="confirmCancel('${id}')"><i class="fa-solid fa-xmark"></i></button>`);
+  } else if(status === 'confirmed'){
     btns.push(`<button class="status-chip-btn checkin" title="${t('actionCheckIn')}" onclick="updateStatus('${id}','arrived')"><i class="fa-solid fa-user-check"></i></button>`);
     btns.push(`<button class="status-chip-btn cancel" title="${t('actionCancel')}" onclick="confirmCancel('${id}')"><i class="fa-solid fa-xmark"></i></button>`);
   } else if(status === 'arrived'){
@@ -113,7 +116,16 @@ function calLaneOfType(type){
  * appointments: نتيجة Api.getAppointments (خام من السيرفر).
  * الترتيب: أجهزة، ثم أطباء، ثم ممرضات — كل واحد عمود مستقل.
  */
-function renderCalendarGrid(hostId, appointments, patients, services, providers, settings, searchQuery){
+/** يمرّر التقويم تلقائيًا لحد خط الوقت الحالي (لو ظاهر) عشان المستخدم مايضطرش ينزل يدويًا كل مرة */
+function scrollCalendarToNow(hostId){
+  const container = document.querySelector(`#${hostId} .cal-container`);
+  const nowLine = document.getElementById('calNowLine');
+  if(!container || !nowLine) return;
+  const targetTop = nowLine.offsetTop - (container.clientHeight / 2);
+  container.scrollTop = Math.max(0, targetTop);
+}
+
+function renderCalendarGrid(hostId, appointments, patients, services, providers, settings, searchQuery, viewDate){
   const host = document.getElementById(hostId);
   if(!host) return;
 
@@ -167,7 +179,7 @@ function renderCalendarGrid(hostId, appointments, patients, services, providers,
       const pname = patient ? patient.Name : ('#' + a.PatientID);
       const sname = service ? service.Name : ('#' + a.ServiceID);
       return `<div class="cal-block ${a.Status}" style="top:${top}px;height:${height}px;" onclick='openApptDetail(${JSON.stringify(a)})'>
-        <div class="cal-b-time">${timeLabel} <span class="cal-b-ref">${formatBookingRef(a.ID)}</span></div>
+        <div class="cal-b-time"><bdi dir="ltr">${timeLabel}</bdi> <span class="cal-b-ref">${formatBookingRef(a.ID)}</span></div>
         <div class="cal-b-patient">${pname}</div>
         <div class="cal-b-service">${sname}</div>
       </div>`;
@@ -185,15 +197,16 @@ function renderCalendarGrid(hostId, appointments, patients, services, providers,
     </div>`;
   }).join('');
 
-  // خط الوقت الحالي (لو ضمن النطاق المعروض)
+  // خط الوقت الحالي — يظهر فقط لو المعروض فعلًا هو تاريخ النهاردة (مش أي يوم تاني بيتصفحه المستخدم)
   const now = new Date();
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const nowMin = now.getHours() * 60 + now.getMinutes();
   let nowLineHtml = '';
-  if(nowMin >= startH * 60 && nowMin <= endH * 60){
+  if(viewDate === todayISO && nowMin >= startH * 60 && nowMin <= endH * 60){
     const top = (nowMin - startH * 60) / 60 * CAL_HOUR_HEIGHT;
     const hh = String(now.getHours()).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
-    nowLineHtml = `<div class="cal-now-line" style="top:${top}px;"><span class="cal-now-badge">${hh}:${mm}</span></div>`;
+    nowLineHtml = `<div class="cal-now-line" id="calNowLine" style="top:${top}px;"><span class="cal-now-badge">${hh}:${mm}</span></div>`;
   }
 
   host.innerHTML = `
@@ -228,21 +241,41 @@ function openApptDetail(appt){
   document.getElementById('apptDetailProviders').textContent = providerNames || '-';
   document.getElementById('apptDetailActions').innerHTML = statusActionsHtml(appt.ID, appt.Status);
 
-  const shareBtn = document.getElementById('apptDetailShareBtn');
-  shareBtn.onclick = () => {
-    bootstrap.Modal.getInstance(document.getElementById('apptDetailModal'))?.hide();
-    openShareModal({
-      patient: patient ? patient.Name : '-',
-      service: service ? service.Name : '-',
-      date: appt.Date, time: appt.Time,
-      provider: providerNames || '-',
-      doctor: doctorName || '', nurse: nurseName || '', device: deviceName || '',
-      bookingId: appt.ID,
-      phone: patient ? patient.Phone : ''
-    });
+  const shareData = {
+    patient: patient ? patient.Name : '-',
+    service: service ? service.Name : '-',
+    date: appt.Date, time: appt.Time,
+    provider: providerNames || '-',
+    doctor: doctorName || '', nurse: nurseName || '', device: deviceName || '',
+    bookingId: appt.ID,
+    phone: patient ? patient.Phone : ''
   };
 
+  document.getElementById('apptSharePngBtn').onclick = () => exportBookingCardStandalone('png', shareData);
+  document.getElementById('apptSharePdfBtn').onclick = () => exportBookingCardStandalone('pdf', shareData);
+
+  // النافذة تفتح فورًا دايمًا — من غير ما تستنى أي طلب شبكة، عشان لو الشبكة بطيئة أو فشلت
+  // النافذة برضه تظهر وتقدر تغيّر الحالة، وبس رابط واتساب يترتب في الخلفية
+  const waBtn = document.getElementById('apptShareWhatsappBtn');
+  waBtn.href = '#';
+  waBtn.classList.add('is-loading');
+  waBtn.onclick = (e) => e.preventDefault();
+
   bootstrap.Modal.getOrCreateInstance(document.getElementById('apptDetailModal')).show();
+
+  ensureSettingsCache().then(() => {
+    waBtn.classList.remove('is-loading');
+    const url = buildWhatsAppUrl(shareData);
+    if(url){
+      waBtn.href = url;
+      waBtn.onclick = null;
+    } else {
+      waBtn.onclick = (e) => { e.preventDefault(); alertToast(t('noPhoneWarning'), 'warning'); };
+    }
+  }).catch((err) => {
+    waBtn.classList.remove('is-loading');
+    waBtn.onclick = (e) => { e.preventDefault(); alertToast((err && err.message) || t('errorTitle'), 'error'); };
+  });
 }
 
 /**

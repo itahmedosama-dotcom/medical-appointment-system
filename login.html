@@ -105,7 +105,6 @@
         <button type="submit" id="loginBtn" class="btn btn-teal w-100 py-2" data-i18n="loginBtn">تسجيل الدخول</button>
       </form>
 
-      <p class="text-center faint mt-4" style="font-size:.78rem;" data-i18n="demoCreds">بيانات تجريبية: admin / admin123</p>
     </div>
   </div>
 </div>
@@ -114,6 +113,7 @@
 <script src="js/api.js"></script>
 <script src="js/i18n.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/app.js"></script>
 <script>
   if(!Api.isConfigured()) document.getElementById('configWarning').classList.remove('d-none');
   if(localStorage.getItem('mas_user')) window.location.href = 'index.html';
