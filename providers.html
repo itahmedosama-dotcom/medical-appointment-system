@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D4A43">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<title>مقدمو الخدمة — برنامج حجز عيادات</title>
+<script>
+  (function(){
+    var lang = localStorage.getItem('mas_lang') || 'ar';
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+    document.write('<link id="bootstrapCss" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/' + (lang === 'en' ? 'bootstrap.min.css' : 'bootstrap.rtl.min.css') + '" rel="stylesheet">');
+  })();
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="sidebar-backdrop"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-brand"><div class="mark">ح</div><div class="name"><span data-i18n="appName">برنامج حجز عيادات</span><small data-i18n="sidebarSubtitle">نظام إدارة المواعيد</small></div></div>
+    <nav class="sidebar-nav">
+      <a href="index.html"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
+      <a href="daily-appointments.html" data-perm="appointments"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navAppointments">المواعيد</span></a>
+      <a href="patients.html" data-perm="patients"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html" data-perm="providers" class="active"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html" data-perm="services"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <a href="reports.html" data-perm="reports"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html" data-perm="settings"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="permissions.html" data-perm="permissions"><i class="fa-solid fa-user-shield"></i> <span data-i18n="navPermissions">الصلاحيات</span></a>
+    </nav>
+    <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="topbar-btn d-lg-none" data-toggle="sidebar"><i class="fa-solid fa-bars"></i></button>
+      <div class="search-box"><input type="text" id="searchBox" data-i18n-placeholder="search" placeholder="بحث..."><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div id="langSwitcherHost"></div>
+        <button class="topbar-btn"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+        <div class="avatar-chip"><div class="initials">؟؟</div><div class="who"><div class="n">...</div><div class="r">...</div></div></div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <div id="apiWarning" class="alert d-none mb-3" style="background:var(--warning-tint);color:var(--warning);border:none;border-radius:var(--radius);font-size:.85rem;">
+        <i class="fa-solid fa-triangle-exclamation me-1"></i> <span data-i18n="apiNotConfigured">الواجهة غير متصلة بقاعدة البيانات بعد.</span>
+      </div>
+
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" data-i18n="providersEyebrow">إدارة الفريق والأجهزة</div>
+          <h1 data-i18n="providersTitle">مقدمو الخدمة</h1>
+          <p data-i18n="providersSubtitle">أطباء، ممرضات، وأجهزة.</p>
+        </div>
+        <button class="btn btn-teal" onclick="openProviderModal()"><i class="fa-solid fa-plus me-1"></i> <span data-i18n="addProvider">إضافة مقدم خدمة</span></button>
+      </div>
+
+      <ul class="nav pill-toggle mb-3" style="width:fit-content;" id="typeFilter">
+        <li><button class="active" type="button" data-type="all" data-i18n="filterAll">الكل</button></li>
+        <li><button type="button" data-type="doctor" data-i18n="filterDoctors">أطباء</button></li>
+        <li><button type="button" data-type="nurse" data-i18n="filterNurses">ممرضات</button></li>
+        <li><button type="button" data-type="device" data-i18n="filterDevices">أجهزة</button></li>
+      </ul>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-clean mb-0">
+            <thead><tr>
+              <th data-i18n="colPatient">الاسم</th><th data-i18n="colType">النوع</th><th data-i18n="colSpecialty">التخصص</th>
+              <th data-i18n="colWorkHours">وقت العمل</th><th data-i18n="colDuration">مدة الموعد</th><th data-i18n="colStatus">الحالة</th><th></th>
+            </tr></thead>
+            <tbody id="providersBody">
+              <tr><td colspan="7" class="text-center faint py-4" data-i18n="loading">جارِ التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Provider Modal -->
+<div class="modal fade" id="providerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;border:none;">
+      <div class="modal-header"><h5 class="modal-title" id="providerModalTitle" data-i18n="addProviderTitle">إضافة مقدم خدمة</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form id="providerForm">
+          <input type="hidden" id="providerId">
+          <div class="mb-3"><label class="form-label" data-i18n="name">الاسم</label><input type="text" id="providerName" class="form-control" required></div>
+          <div class="mb-3">
+            <label class="form-label" data-i18n="typeLabel">النوع</label>
+            <div class="d-flex gap-2">
+              <label class="need-check flex-fill active" style="cursor:pointer;"><span><i class="fa-solid fa-user-doctor me-1" style="color:var(--teal)"></i> <span data-i18n="doctor">طبيب</span></span><input type="radio" name="ptype" value="doctor" checked></label>
+              <label class="need-check flex-fill" style="cursor:pointer;"><span><i class="fa-solid fa-user-nurse me-1" style="color:var(--violet)"></i> <span data-i18n="nurse">ممرضة</span></span><input type="radio" name="ptype" value="nurse"></label>
+              <label class="need-check flex-fill" style="cursor:pointer;"><span><i class="fa-solid fa-radiation me-1" style="color:var(--amber)"></i> <span data-i18n="device">جهاز</span></span><input type="radio" name="ptype" value="device"></label>
+            </div>
+          </div>
+          <div class="mb-3"><label class="form-label" data-i18n="specialty">التخصص</label><input type="text" id="providerSpecialty" class="form-control" data-i18n-placeholder="specialtyPlaceholder" placeholder="مثال: جلدية، أشعة..."></div>
+          <div class="row g-3 mb-3">
+            <div class="col-6"><label class="form-label" data-i18n="startTime">وقت البداية</label><input type="time" id="providerStart" class="form-control" value="09:00"></div>
+            <div class="col-6"><label class="form-label" data-i18n="endTime">وقت النهاية</label><input type="time" id="providerEnd" class="form-control" value="17:00"></div>
+          </div>
+          <div class="mb-3"><label class="form-label" data-i18n="defaultDuration">مدة الموعد الافتراضية (دقيقة)</label><input type="number" id="providerDuration" class="form-control" value="20"></div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="providerActive" checked>
+            <label class="form-check-label" for="providerActive" data-i18n="providerActiveLabel">فعال</label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-soft" data-bs-dismiss="modal" data-i18n="cancel">إلغاء</button>
+        <button class="btn btn-teal" id="saveProviderBtn" onclick="saveProvider()" data-i18n="save">حفظ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const user = requireAuth();
+  if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
+
+  let providersCache = [];
+  let activeTypeFilter = 'all';
+  const providerModal = () => bootstrap.Modal.getOrCreateInstance(document.getElementById('providerModal'));
+
+  function renderProviders(list){
+    const tbody = document.getElementById('providersBody');
+    if(list.length === 0){
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center faint py-4">${t('noProvidersFound')}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(p => {
+      const typeKey = p.Type === 'doctor' ? 'doctor' : (p.Type === 'nurse' ? 'nurse' : 'device');
+      const active = (p.Active === true || String(p.Active).toLowerCase() === 'true');
+      return `
+      <tr>
+        <td class="name-cell"><div class="avatar">${(p.Name||'?')[0]}</div> ${p.Name}</td>
+        <td><span class="lane-chip ${p.Type}"><span class="lane-dot ${p.Type}"></span> ${t(typeKey)}</span></td>
+        <td>${p.Specialty || '-'}</td>
+        <td class="text-mono">${p.StartTime || ''} – ${p.EndTime || ''}</td>
+        <td class="text-mono">${p.DefaultDuration || ''} ${t('minutesSuffix')}</td>
+        <td>${active ? `<span class="status-badge done">${t('active')}</span>` : `<span class="status-badge cancelled">${t('inactive')}</span>`}</td>
+        <td class="text-end">
+          <button class="btn btn-icon btn-soft" onclick='openProviderModal(${JSON.stringify(p)})'><i class="fa-regular fa-pen-to-square"></i></button>
+          <button class="btn btn-icon btn-soft" onclick="deleteProvider('${p.ID}', '${(p.Name||'').replace(/'/g,'')}')"><i class="fa-regular fa-trash-can text-danger"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function applyFilters(){
+    const q = document.getElementById('searchBox').value.trim();
+    let list = providersCache;
+    if(activeTypeFilter !== 'all') list = list.filter(p => p.Type === activeTypeFilter);
+    if(q) list = list.filter(p => (p.Name||'').includes(q) || (p.Specialty||'').includes(q));
+    renderProviders(list);
+  }
+
+  document.getElementById('searchBox').addEventListener('input', applyFilters);
+  document.querySelectorAll('#typeFilter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#typeFilter button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTypeFilter = btn.getAttribute('data-type');
+      applyFilters();
+    });
+  });
+
+  async function loadProviders(){
+    if(!Api.isConfigured()) return;
+    try{
+      providersCache = await Api.getProviders();
+      applyFilters();
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    }
+  }
+
+  function openProviderModal(p){
+    document.getElementById('providerForm').reset();
+    document.querySelectorAll('.need-check').forEach(el => el.classList.remove('active'));
+    if(p){
+      document.getElementById('providerModalTitle').textContent = t('editProviderTitle');
+      document.getElementById('providerId').value = p.ID;
+      document.getElementById('providerName').value = p.Name || '';
+      document.getElementById('providerSpecialty').value = p.Specialty || '';
+      document.getElementById('providerStart').value = p.StartTime || '09:00';
+      document.getElementById('providerEnd').value = p.EndTime || '17:00';
+      document.getElementById('providerDuration').value = p.DefaultDuration || 20;
+      document.getElementById('providerActive').checked = (p.Active === true || String(p.Active).toLowerCase() === 'true');
+      const radio = document.querySelector(`input[name="ptype"][value="${p.Type}"]`);
+      if(radio){ radio.checked = true; radio.closest('.need-check').classList.add('active'); }
+    } else {
+      document.getElementById('providerModalTitle').textContent = t('addProviderTitle');
+      document.getElementById('providerId').value = '';
+      document.querySelector('input[name="ptype"][value="doctor"]').closest('.need-check').classList.add('active');
+    }
+    providerModal().show();
+  }
+
+  document.querySelectorAll('input[name="ptype"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.need-check').forEach(el => el.classList.remove('active'));
+      r.closest('.need-check').classList.add('active');
+    });
+  });
+
+  async function saveProvider(){
+    const id = document.getElementById('providerId').value;
+    const data = {
+      name: document.getElementById('providerName').value.trim(),
+      type: document.querySelector('input[name="ptype"]:checked').value,
+      specialty: document.getElementById('providerSpecialty').value.trim(),
+      startTime: document.getElementById('providerStart').value,
+      endTime: document.getElementById('providerEnd').value,
+      defaultDuration: document.getElementById('providerDuration').value,
+      active: document.getElementById('providerActive').checked
+    };
+    if(!data.name){
+      Swal.fire({ icon:'warning', title: t('providerNameRequired'), confirmButtonColor:'#14685E' });
+      return;
+    }
+    const btn = document.getElementById('saveProviderBtn');
+    btn.disabled = true;
+    try{
+      if(id) await Api.updateProvider(id, data);
+      else await Api.createProvider(data);
+      providerModal().hide();
+      await loadProviders();
+      Swal.fire({ toast:true, position:'top-start', icon:'success', title: t('savedToast'), showConfirmButton:false, timer:1600 });
+    } catch(err){
+      Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function deleteProvider(id, name){
+    Swal.fire({
+      title: t('confirmDeleteTitle'), text: `${name}? ${t('confirmDeleteText')}`, icon:'warning',
+      showCancelButton:true, confirmButtonText: t('delete'), cancelButtonText: t('cancel'),
+      confirmButtonColor:'#BE4B3B', cancelButtonColor:'#8B9C98', reverseButtons:true
+    }).then(res => {
+      if(!res.isConfirmed) return;
+      Api.deleteProvider(id).then(() => {
+        loadProviders();
+        Swal.fire({ toast:true, position:'top-start', icon:'success', title: t('deletedToast'), showConfirmButton:false, timer:1600 });
+      }).catch(err => {
+        Swal.fire({ icon:'error', title: t('errorTitle'), text: err.message, confirmButtonColor:'#14685E' });
+      });
+    });
+  }
+
+  loadProviders();
+</script>
+</body>
+</html>
