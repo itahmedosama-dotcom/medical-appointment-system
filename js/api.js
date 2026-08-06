@@ -50,6 +50,12 @@ const Api = (function(){
     login: (username, password) => call('login', { username, password }, 'POST'),
     updateUserLanguage: (id, language) => call('update_user_language', { id, language }, 'POST'),
 
+    // Users & Permissions
+    getUsers:    () => call('users_list'),
+    createUser:  (data) => call('users_create', data, 'POST'),
+    updateUser:  (id, data) => call('users_update', Object.assign({ id }, data), 'POST'),
+    deleteUser:  (id, requesterId) => call('users_delete', { id, requesterId }, 'POST'),
+
     // Patients
     getPatients:    () => call('patients_list'),
     createPatient:  (data) => call('patients_create', data, 'POST'),
@@ -72,8 +78,11 @@ const Api = (function(){
     getAppointments:        (date) => call('appointments_list', { date }),
     checkConflict:           (data) => call('appointments_check_conflict', data),
     createAppointment:       (data) => call('appointments_create', data, 'POST'),
-    updateAppointmentStatus: (id, status) => call('appointments_update_status', { id, status }, 'POST'),
+    updateAppointmentStatus: (id, status, requesterId, requesterName) => call('appointments_update_status', { id, status, requesterId, requesterName }, 'POST'),
     deleteAppointment:       (id) => call('appointments_delete', { id }, 'POST'),
+
+    // Activity log
+    getActivityLog: (limit) => call('activity_list', { limit }),
 
     // Settings
     getSettings:    () => call('settings_get'),

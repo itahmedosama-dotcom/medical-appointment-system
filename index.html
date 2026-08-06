@@ -29,15 +29,13 @@
     </div>
     <nav class="sidebar-nav">
       <a href="index.html" class="active"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
-      <a href="patients.html"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
-      <a href="providers.html"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
-      <a href="services.html"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
-      <div class="nav-section-label" data-i18n="navAppointmentsSection">المواعيد</div>
-      <a href="booking.html"><i class="fa-solid fa-calendar-plus"></i> <span data-i18n="navBooking">الحجز</span></a>
-      <a href="daily-appointments.html"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navDaily">الحجوزات اليومية</span></a>
-      <div class="nav-section-label" data-i18n="navSystemSection">النظام</div>
-      <a href="reports.html"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
-      <a href="settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="daily-appointments.html" data-perm="appointments"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navAppointments">المواعيد</span></a>
+      <a href="patients.html" data-perm="patients"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html" data-perm="providers"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html" data-perm="services"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <a href="reports.html" data-perm="reports"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html" data-perm="settings"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="permissions.html" data-perm="permissions"><i class="fa-solid fa-user-shield"></i> <span data-i18n="navPermissions">الصلاحيات</span></a>
     </nav>
     <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
   </aside>
@@ -168,6 +166,7 @@
         <div id="shareCardPrintable" class="printable-card mb-3">
           <div class="pc-head"><span id="shareCardCenter">برنامج حجز عيادات</span><small data-i18n="shareCardSubtitle">تأكيد حجز موعد</small></div>
           <div class="pc-body">
+            <div class="pc-row"><span data-i18n="shareBookingRef">رقم الحجز</span><span id="shareCardRef" class="text-mono">-</span></div>
             <div class="pc-row"><span data-i18n="shareClient">العميل</span><span id="shareCardPatient">-</span></div>
             <div class="pc-row"><span data-i18n="shareService">الخدمة</span><span id="shareCardService">-</span></div>
             <div class="pc-row"><span data-i18n="shareDate">التاريخ</span><span id="shareCardDate">-</span></div>
@@ -255,6 +254,7 @@
               <button class="btn btn-icon btn-whatsapp btn-sm" data-action="share"
                 data-patient="${pname}" data-service="${sname}" data-date="${r.Date}" data-time="${r.Time}"
                 data-provider="${provName}" data-doctor="${doctorName||''}" data-nurse="${nurseName||''}" data-device="${deviceName||''}"
+                data-booking-id="${r.ID}"
                 data-phone="${patient ? patient.Phone : ''}">
                 <i class="fa-solid fa-share-nodes"></i>
               </button>
@@ -308,7 +308,7 @@
 
   async function updateStatus(id, status){
     try{
-      await Api.updateAppointmentStatus(id, status);
+      await Api.updateAppointmentStatus(id, status, user ? user.id : '', user ? user.name : '');
       const a = calendarAppointments.find(x => String(x.ID) === String(id));
       if(a) a.Status = status;
       renderCalendar();

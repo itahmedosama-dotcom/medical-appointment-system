@@ -5,16 +5,23 @@
  * حتى تبقى نفس التجربة وأزرار الإجراء متطابقة في المكانين.
  */
 
-/** أزرار إجراء تفاعلية بلمسة واحدة بدل قائمة منسدلة */
+/**
+ * أزرار إجراء تفاعلية بلمسة واحدة — لكن مقيّدة بترتيب المراحل الثابت:
+ * محجوز ← حضر ← انتهى (مينفعش نقفز مرحلة). الإلغاء متاح من محجوز/حضر فقط،
+ * والاسترجاع متاح من ملغي فقط (وبيتفحص تعارض على السيرفر وقت الاسترجاع).
+ */
 function statusActionsHtml(id, status){
   const btns = [];
-  if(status !== 'arrived') btns.push(`<button class="status-chip-btn checkin" title="${t('actionCheckIn')}" onclick="updateStatus('${id}','arrived')"><i class="fa-solid fa-user-check"></i></button>`);
-  if(status !== 'done') btns.push(`<button class="status-chip-btn complete" title="${t('actionComplete')}" onclick="updateStatus('${id}','done')"><i class="fa-solid fa-check-double"></i></button>`);
-  if(status === 'cancelled'){
-    btns.push(`<button class="status-chip-btn reopen" title="${t('actionReopen')}" onclick="updateStatus('${id}','booked')"><i class="fa-solid fa-rotate-left"></i></button>`);
-  } else {
+  if(status === 'booked'){
+    btns.push(`<button class="status-chip-btn checkin" title="${t('actionCheckIn')}" onclick="updateStatus('${id}','arrived')"><i class="fa-solid fa-user-check"></i></button>`);
     btns.push(`<button class="status-chip-btn cancel" title="${t('actionCancel')}" onclick="confirmCancel('${id}')"><i class="fa-solid fa-xmark"></i></button>`);
+  } else if(status === 'arrived'){
+    btns.push(`<button class="status-chip-btn complete" title="${t('actionComplete')}" onclick="updateStatus('${id}','done')"><i class="fa-solid fa-check-double"></i></button>`);
+    btns.push(`<button class="status-chip-btn cancel" title="${t('actionCancel')}" onclick="confirmCancel('${id}')"><i class="fa-solid fa-xmark"></i></button>`);
+  } else if(status === 'cancelled'){
+    btns.push(`<button class="status-chip-btn reopen" title="${t('actionReopen')}" onclick="updateStatus('${id}','booked')"><i class="fa-solid fa-rotate-left"></i></button>`);
   }
+  // "انتهى" حالة نهائية — بدون أزرار إضافية
   return `
     <div class="status-actions">
       <span class="status-chip-btn current ${status}">${t('status'+status.charAt(0).toUpperCase()+status.slice(1))}</span>
@@ -55,6 +62,7 @@ function buildLaneCard(type, icon, titleKey, items){
             data-doctor="${r.doctor ? r.doctor.providerName : ''}"
             data-nurse="${r.nurse ? r.nurse.providerName : ''}"
             data-device="${r.device ? r.device.providerName : ''}"
+            data-booking-id="${r.id}"
             data-phone="${r.patientPhone||''}">
             <i class="fa-solid fa-share-nodes"></i>
           </button>
@@ -138,7 +146,8 @@ function renderCalendarGrid(hostId, appointments, patients, services, providers,
   const colsHtml = ordered.map(prov => {
     const laneType = calLaneOfType(prov.Type);
     const idField = prov.Type === 'doctor' ? 'DoctorID' : (prov.Type === 'nurse' ? 'NurseID' : 'DeviceID');
-    let items = appointments.filter(a => String(a[idField]) === String(prov.ID));
+    // الحجوزات الملغاة تختفي من الكلندر — تُعرض فقط من نافذة "الملغاة" المخصّصة (قابلة للاسترجاع من هناك)
+    let items = appointments.filter(a => String(a[idField]) === String(prov.ID) && a.Status !== 'cancelled');
     if(q){
       items = items.filter(a => {
         const patient = patientById[String(a.PatientID)];
@@ -158,7 +167,7 @@ function renderCalendarGrid(hostId, appointments, patients, services, providers,
       const pname = patient ? patient.Name : ('#' + a.PatientID);
       const sname = service ? service.Name : ('#' + a.ServiceID);
       return `<div class="cal-block ${a.Status}" style="top:${top}px;height:${height}px;" onclick='openApptDetail(${JSON.stringify(a)})'>
-        <div class="cal-b-time">${timeLabel}</div>
+        <div class="cal-b-time">${timeLabel} <span class="cal-b-ref">${formatBookingRef(a.ID)}</span></div>
         <div class="cal-b-patient">${pname}</div>
         <div class="cal-b-service">${sname}</div>
       </div>`;
@@ -213,6 +222,8 @@ function openApptDetail(appt){
   document.getElementById('apptDetailPatient').textContent = patient ? patient.Name : ('#' + appt.PatientID);
   document.getElementById('apptDetailService').textContent = service ? service.Name : ('#' + appt.ServiceID);
   document.getElementById('apptDetailDateTime').textContent = `${appt.Date} — ${appt.Time}`;
+  const refEl = document.getElementById('apptDetailRef');
+  if(refEl) refEl.textContent = formatBookingRef(appt.ID);
   const providerNames = [doctorName, nurseName, deviceName].filter(Boolean).join('، ');
   document.getElementById('apptDetailProviders').textContent = providerNames || '-';
   document.getElementById('apptDetailActions').innerHTML = statusActionsHtml(appt.ID, appt.Status);
@@ -226,6 +237,7 @@ function openApptDetail(appt){
       date: appt.Date, time: appt.Time,
       provider: providerNames || '-',
       doctor: doctorName || '', nurse: nurseName || '', device: deviceName || '',
+      bookingId: appt.ID,
       phone: patient ? patient.Phone : ''
     });
   };

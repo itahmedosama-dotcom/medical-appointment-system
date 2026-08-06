@@ -26,15 +26,13 @@
     <div class="sidebar-brand"><div class="mark">ح</div><div class="name"><span data-i18n="appName">برنامج حجز عيادات</span><small data-i18n="sidebarSubtitle">نظام إدارة المواعيد</small></div></div>
     <nav class="sidebar-nav">
       <a href="index.html"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
-      <a href="patients.html" class="active"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
-      <a href="providers.html"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
-      <a href="services.html"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
-      <div class="nav-section-label" data-i18n="navAppointmentsSection">المواعيد</div>
-      <a href="booking.html"><i class="fa-solid fa-calendar-plus"></i> <span data-i18n="navBooking">الحجز</span></a>
-      <a href="daily-appointments.html"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navDaily">الحجوزات اليومية</span></a>
-      <div class="nav-section-label" data-i18n="navSystemSection">النظام</div>
-      <a href="reports.html"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
-      <a href="settings.html"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="daily-appointments.html" data-perm="appointments"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navAppointments">المواعيد</span></a>
+      <a href="patients.html" data-perm="patients" class="active"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html" data-perm="providers"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html" data-perm="services"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <a href="reports.html" data-perm="reports"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html" data-perm="settings"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="permissions.html" data-perm="permissions"><i class="fa-solid fa-user-shield"></i> <span data-i18n="navPermissions">الصلاحيات</span></a>
     </nav>
     <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
   </aside>

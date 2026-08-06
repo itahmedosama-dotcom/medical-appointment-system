@@ -715,6 +715,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 .cal-block:hover{ filter: brightness(0.97); box-shadow: 0 3px 8px rgba(20,43,39,.18); }
 .cal-block .cal-b-time{ font-weight: 800; font-family: var(--font-mono); font-size: .65rem; }
+.cal-block .cal-b-ref{ opacity: .7; font-weight: 600; }
 .cal-block .cal-b-patient{ font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-block .cal-b-service{ opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .66rem; }
 .cal-block.booked{ background: var(--warning-tint); border-color: #EFD9A6; color: #7A5A12; }

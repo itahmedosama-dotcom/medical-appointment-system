@@ -30,6 +30,7 @@ const DICT = {
 
   // ------- القائمة الجانبية / Sidebar -------
   navHome:        { ar:'الرئيسية', en:'Home' },
+  navAppointments: { ar:'المواعيد', en:'Appointments' },
   navPatients:    { ar:'المرضى', en:'Patients' },
   navProviders:   { ar:'مقدمو الخدمة', en:'Providers' },
   navServices:    { ar:'الخدمات', en:'Services' },
@@ -39,7 +40,10 @@ const DICT = {
   navSystemSection: { ar:'النظام', en:'System' },
   navReports:     { ar:'التقارير', en:'Reports' },
   navSettings:    { ar:'الإعدادات', en:'Settings' },
+  navPermissions: { ar:'الصلاحيات', en:'Permissions' },
   sidebarSubtitle: { ar:'نظام إدارة المواعيد', en:'Appointment Management System' },
+  noPermissionTitle: { ar:'ليس لديك صلاحية', en:'Access denied' },
+  noPermissionText: { ar:'ليس لديك صلاحية الوصول لهذه الصفحة. تواصل مع مدير النظام لتفعيلها.', en:'You do not have permission to access this page. Contact your administrator.' },
 
   // ------- تسجيل الدخول / Login -------
   loginEyebrow:   { ar:'تسجيل الدخول', en:'Sign in' },
@@ -183,6 +187,8 @@ const DICT = {
   conflictYes:    { ar:'يوجد تعارض: مقدم الخدمة محجوز بالفعل في هذا الوقت.', en:'Conflict: this provider is already booked at that time.' },
   conflictNo:     { ar:'لا يوجد تعارض في المواعيد لمقدمي الخدمة المختارين.', en:'No scheduling conflicts for the selected providers.' },
   conflictCheckFailed: { ar:'تعذّر التحقق من التعارض', en:'Could not check for conflicts' },
+  pastDateError:  { ar:'لا يمكن الحجز في يوم سابق — اختر اليوم الحالي أو تاريخًا لاحقًا', en:"You can't book a past date — choose today or a future date" },
+  pastTimeError:  { ar:'لا يمكن الحجز في وقت سابق للوقت الحالي', en:"You can't book a time earlier than now" },
 
   // ------- الحجوزات اليومية / Daily appointments -------
   dailyEyebrow:   { ar:'اليوم', en:'Today' },
@@ -206,6 +212,10 @@ const DICT = {
   cancelApptText: { ar:'هل تريد إلغاء هذا الحجز؟', en:'Do you want to cancel this booking?' },
   cancelApptConfirm: { ar:'نعم، إلغاء', en:'Yes, cancel' },
   keepBooking:    { ar:'تراجع', en:'Keep it' },
+  cancelledBtn:   { ar:'الملغاة', en:'Cancelled' },
+  cancelledModalTitle: { ar:'الحجوزات الملغاة', en:'Cancelled bookings' },
+  cancelledModalHint: { ar:'حجوزات هذا اليوم اللي اتلغت. تقدر ترجّعها لو حصل غلط، وهيتفحص تعارض تاني وقت الاسترجاع.', en:"Cancelled bookings for this day. You can restore them if it was a mistake — a fresh conflict check runs on restore." },
+  noCancelledFound: { ar:'لا توجد حجوزات ملغاة في هذا اليوم', en:'No cancelled bookings for this day' },
 
   // ------- التقارير / Reports -------
   reportsEyebrow: { ar:'تحليلات المركز', en:'Center analytics' },
@@ -227,17 +237,57 @@ const DICT = {
   centerName:     { ar:'اسم المركز', en:'Center name' },
   countryCodeLabel: { ar:'كود الدولة (للواتساب)', en:'Country code (for WhatsApp)' },
   whatsappTemplateTitle: { ar:'رسالة تأكيد واتساب الافتراضية', en:'Default WhatsApp confirmation message' },
-  whatsappVarsHint: { ar:'المتغيرات المتاحة: {patient} {center} {service} {date} {time} — تُستبدل تلقائيًا عند إرسال رسالة الحجز عبر واتساب.', en:'Available variables: {patient} {center} {service} {date} {time} — filled automatically when sending via WhatsApp.' },
+  whatsappVarsHint: { ar:'المتغيرات المتاحة: {patient} {center} {bookingId} {service} {date} {time} {doctor} {nurse} {device} — تُستبدل تلقائيًا، وأي سطر فيه متغير طبيب/ممرضة/جهاز بدون قيمة (خدمة مش محتاجاه) بيتحذف تلقائيًا من الرسالة.', en:'Available variables: {patient} {center} {bookingId} {service} {date} {time} {doctor} {nurse} {device} — filled automatically. Any line with an empty doctor/nurse/device variable is removed automatically from the message.' },
+  resetTemplateBtn: { ar:'استعادة القالب الافتراضي', en:'Reset to default template' },
   saveSettingsBtn: { ar:'حفظ الإعدادات', en:'Save settings' },
   savedSettingsToast: { ar:'تم حفظ الإعدادات', en:'Settings saved' },
   usersNoteTitle: { ar:'ملاحظة', en:'Note' },
-  usersNoteBody:  { ar:'إدارة المستخدمين تتم حاليًا مباشرة من ورقة Users في Google Sheets (إضافة/حذف صف يدويًا).', en:'User management is currently done directly in the Users sheet in Google Sheets (add/remove rows manually).' },
+  usersNoteBody:  { ar:'كلمات المرور وأسماء الدخول تُدار من هنا، والصلاحيات التفصيلية لكل مستخدم من صفحة "الصلاحيات".', en:'Usernames and passwords are managed here; detailed per-user permissions are on the "Permissions" page.' },
+
+  // ------- الصلاحيات / Permissions -------
+  permissionsEyebrow: { ar:'إدارة المستخدمين', en:'User management' },
+  permissionsTitle: { ar:'الصلاحيات', en:'Permissions' },
+  permissionsSubtitle: { ar:'حدّد لكل مستخدم أي أجزاء من النظام يقدر يوصلها ويعدّل فيها.', en:'Control which parts of the system each user can access and edit.' },
+  addUser:        { ar:'إضافة مستخدم', en:'Add user' },
+  colUsername:    { ar:'اسم الدخول', en:'Username' },
+  colRole:        { ar:'الدور', en:'Role' },
+  addUserTitle:   { ar:'إضافة مستخدم', en:'Add user' },
+  editUserTitle:  { ar:'تعديل المستخدم', en:'Edit user' },
+  roleLabel:      { ar:'الدور الوظيفي', en:'Job role' },
+  rolePlaceholder: { ar:'مثال: موظف استقبال', en:'e.g. Receptionist' },
+  passwordOptionalHint: { ar:'اتركه فارغًا للإبقاء على كلمة المرور الحالية', en:'Leave empty to keep the current password' },
+  permissionsListLabel: { ar:'الصلاحيات', en:'Permissions' },
+  permPatients:   { ar:'المرضى', en:'Patients' },
+  permProviders:  { ar:'مقدمو الخدمة', en:'Providers' },
+  permServices:   { ar:'الخدمات', en:'Services' },
+  permAppointments: { ar:'المواعيد', en:'Appointments' },
+  permReports:    { ar:'التقارير', en:'Reports' },
+  permSettings:   { ar:'الإعدادات', en:'Settings' },
+  permPermissions: { ar:'الصلاحيات (إدارة المستخدمين)', en:'Permissions (user management)' },
+  userFieldsRequired: { ar:'اسم المستخدم وكلمة المرور والاسم مطلوبون', en:'Username, password, and name are required' },
+  cannotDeleteSelf: { ar:'لا يمكنك حذف حسابك الخاص وأنت مسجّل دخول به', en:"You can't delete your own account while signed in with it" },
+  noUsersFound:   { ar:'لا يوجد مستخدمون', en:'No users found' },
+  fullAccessBadge: { ar:'كل الصلاحيات', en:'Full access' },
+  noAccessBadge:  { ar:'لا صلاحيات', en:'No access' },
+
+  // ------- سجل الحركات / Activity log -------
+  activityLogEyebrow: { ar:'سجل النظام', en:'System log' },
+  activityLogTitle: { ar:'سجل الحركات', en:'Activity log' },
+  activityLogSubtitle: { ar:'كل عملية حجز، تسجيل حضور، إنهاء، إلغاء، أو استرجاع — بالوقت والتاريخ واسم من قام بها.', en:'Every booking, check-in, completion, cancellation, or restore — with the time, date, and who did it.' },
+  colDateTime:    { ar:'التاريخ والوقت', en:'Date & time' },
+  colUser:        { ar:'المستخدم', en:'User' },
+  colAction:      { ar:'الحركة', en:'Action' },
+  colDetails:     { ar:'التفاصيل', en:'Details' },
+  actionCreate:   { ar:'حجز جديد', en:'New booking' },
+  actionDelete:   { ar:'حذف', en:'Deleted' },
+  noLogFound:     { ar:'لا توجد حركات مسجّلة بعد', en:'No activity recorded yet' },
   languageSectionTitle: { ar:'اللغة', en:'Language' },
   languageSectionBody: { ar:'لغة الواجهة المفضّلة لحسابك. تُحفظ مع حسابك وتُطبَّق تلقائيًا عند تسجيل الدخول من أي جهاز.', en:'Your preferred interface language. Saved to your account and applied automatically wherever you sign in.' },
 
   // ------- نافذة المشاركة / Share modal -------
   shareModalTitle: { ar:'مشاركة الحجز', en:'Share booking' },
   shareCardSubtitle: { ar:'تأكيد حجز موعد', en:'Appointment confirmation' },
+  shareBookingRef: { ar:'رقم الحجز', en:'Booking #' },
   shareClient:    { ar:'العميل', en:'Client' },
   shareService:   { ar:'الخدمة', en:'Service' },
   shareDate:      { ar:'التاريخ', en:'Date' },

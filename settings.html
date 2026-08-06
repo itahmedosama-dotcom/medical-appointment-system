@@ -26,15 +26,13 @@
     <div class="sidebar-brand"><div class="mark">ح</div><div class="name"><span data-i18n="appName">برنامج حجز عيادات</span><small data-i18n="sidebarSubtitle">نظام إدارة المواعيد</small></div></div>
     <nav class="sidebar-nav">
       <a href="index.html"><i class="fa-solid fa-house"></i> <span data-i18n="navHome">الرئيسية</span></a>
-      <a href="patients.html"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
-      <a href="providers.html"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
-      <a href="services.html"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
-      <div class="nav-section-label" data-i18n="navAppointmentsSection">المواعيد</div>
-      <a href="booking.html"><i class="fa-solid fa-calendar-plus"></i> <span data-i18n="navBooking">الحجز</span></a>
-      <a href="daily-appointments.html"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navDaily">الحجوزات اليومية</span></a>
-      <div class="nav-section-label" data-i18n="navSystemSection">النظام</div>
-      <a href="reports.html"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
-      <a href="settings.html" class="active"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="daily-appointments.html" data-perm="appointments"><i class="fa-solid fa-calendar-days"></i> <span data-i18n="navAppointments">المواعيد</span></a>
+      <a href="patients.html" data-perm="patients"><i class="fa-solid fa-user-injured"></i> <span data-i18n="navPatients">المرضى</span></a>
+      <a href="providers.html" data-perm="providers"><i class="fa-solid fa-user-doctor"></i> <span data-i18n="navProviders">مقدمو الخدمة</span></a>
+      <a href="services.html" data-perm="services"><i class="fa-solid fa-stethoscope"></i> <span data-i18n="navServices">الخدمات</span></a>
+      <a href="reports.html" data-perm="reports"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="navReports">التقارير</span></a>
+      <a href="settings.html" data-perm="settings" class="active"><i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات</span></a>
+      <a href="permissions.html" data-perm="permissions"><i class="fa-solid fa-user-shield"></i> <span data-i18n="navPermissions">الصلاحيات</span></a>
     </nav>
     <div class="sidebar-foot"><a href="#" onclick="logout();return false;" style="color:#CBE2DD;"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="logout">تسجيل الخروج</span></a></div>
   </aside>
@@ -80,10 +78,13 @@
           </div>
 
           <div class="card mt-3">
-            <div class="card-header" data-i18n="whatsappTemplateTitle">رسالة تأكيد واتساب الافتراضية</div>
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span data-i18n="whatsappTemplateTitle">رسالة تأكيد واتساب الافتراضية</span>
+              <button type="button" class="btn btn-soft btn-sm" id="resetTemplateBtn"><i class="fa-solid fa-rotate-left me-1"></i> <span data-i18n="resetTemplateBtn">استعادة الافتراضي</span></button>
+            </div>
             <div class="card-body">
-              <textarea class="form-control" id="whatsappTemplate" rows="5"></textarea>
-              <p class="faint mt-2 mb-0" style="font-size:.8rem;" data-i18n="whatsappVarsHint">المتغيرات المتاحة: {patient} {center} {service} {date} {time}</p>
+              <textarea class="form-control" id="whatsappTemplate" rows="7"></textarea>
+              <p class="faint mt-2 mb-0" style="font-size:.8rem;" data-i18n="whatsappVarsHint">المتغيرات المتاحة: {patient} {center} {service} {date} {time} {doctor} {nurse} {device}</p>
             </div>
           </div>
 
@@ -107,7 +108,9 @@
           <div class="card">
             <div class="card-header" data-i18n="usersNoteTitle">ملاحظة</div>
             <div class="card-body">
-              <p class="muted" style="font-size:.88rem;" data-i18n="usersNoteBody">إدارة المستخدمين تتم من ورقة Users في Google Sheets.</p>
+              <p class="muted mb-3" style="font-size:.88rem;" data-i18n="usersNoteBody">إدارة المستخدمين تتم من ورقة Users في Google Sheets.</p>
+              <a href="permissions.html" class="btn btn-outline-teal w-100" data-perm="permissions"><i class="fa-solid fa-user-shield me-1"></i> <span data-i18n="navPermissions">الصلاحيات</span></a>
+              <a href="activity-log.html" class="btn btn-outline-teal w-100 mt-2" data-perm="settings"><i class="fa-solid fa-clock-rotate-left me-1"></i> <span data-i18n="activityLogTitle">سجل الحركات</span></a>
             </div>
           </div>
         </div>
@@ -126,6 +129,13 @@
 <script>
   const user = requireAuth();
   if(!Api.isConfigured()) document.getElementById('apiWarning').classList.remove('d-none');
+
+  const DEFAULT_WHATSAPP_TEMPLATE =
+    'مرحبًا {patient} 👋\nتم تأكيد حجزك في {center}:\n🔢 رقم الحجز: {bookingId}\n🩺 الخدمة: {service}\n📅 التاريخ: {date}\n⏰ الوقت: {time}\n👨\u200d⚕️ الطبيب: {doctor}\n👩\u200d⚕️ الممرضة: {nurse}\n🩻 الجهاز: {device}\nنرجو الحضور قبل الموعد بـ 10 دقائق.';
+
+  document.getElementById('resetTemplateBtn').addEventListener('click', () => {
+    document.getElementById('whatsappTemplate').value = DEFAULT_WHATSAPP_TEMPLATE;
+  });
 
   function refreshLangToggle(){
     document.querySelectorAll('#accountLangToggle button').forEach(b => {
@@ -164,6 +174,7 @@
     btn.disabled = true;
     try{
       await Api.updateSettings({
+        requesterId: user ? user.id : '',
         centerName: document.getElementById('centerName').value.trim(),
         countryCode: document.getElementById('countryCode').value.trim(),
         workStart: document.getElementById('workStart').value,
